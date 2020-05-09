@@ -2,76 +2,31 @@
 ###############################################################
 #### Sulzer                                              ######
 ###############################################################
-## Encryption command: 
-## ansible-vault encrypt_string --vault-password-file vault_key --name 'nameofmysecret'
-
 deployment:
-  name: lvmd-dev
+  name: dev
 
-#private_interface: eth1
+manage_firewall: true
+k8s_internal_interface: wlp0s20f0u10
+k8s_internal_interface_wifi: true
+k8s_internal_interface_connections: 
+  - FRITZ-Box_7590_ZM_5Ghz
 
 ansible_user: myuser
-ansible_ssh_pass: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  37616534336134393436303964353736336539343935313936626333653265346139316231653939
-  6130373264623363333639323832353030376236323831360a326238393464383966636466303530
-  36366234636237366335613536343433303766623832616135383737626164343634386634666265
-  6336396432363231320a303932373139396133353132656337393638326332346639316236363364
-  3037
-ansible_become_password: !vault |
-  $ANSIBLE_VAULT;1.1;AES256
-  37616534336134393436303964353736336539343935313936626333653265346139316231653939
-  6130373264623363333639323832353030376236323831360a326238393464383966636466303530
-  36366234636237366335613536343433303766623832616135383737626164343634386634666265
-  6336396432363231320a303932373139396133353132656337393638326332346639316236363364
-  3037
+
+## Uncomment this if running specifc tags only 
+## Bug: https://github.com/kubernetes-sigs/kubespray/issues/5891
+# proxy_env: ''
+# environment: ''
+
 # Optional but overwrites existing conf
 # timeservers:
 #   - 172.17.0.8
 #   - 172.17.0.9
 #   - 0.de.pool.ntp.org
 
-kernel_target: kernel-ml-5.5.11-1.el7.elrepo
-
 # environment_variables:
 #   http_proxy: "http://172.21.0.10:88"
 
-#firewall: firewalld
-
-### Logical volumes for docker container rw-layer
-### -> Applies only to hosts in group: docker-container-lvm
-#docker_container_block_devices_for_lvm: /dev/vdb
-
-# logical_volumes:
-# ## Note: list can be complented by specifying var "additional_logical_volumes"
-# ## in host_vars in order to define host specifc volumes
-#   hdd: 
-#     ## Comma delimited devices, e.g. /dev/sdb,/dev/sdc
-#     block_devices: /dev/vdb
-#     volumes:
-#       - volumes_per_node: 10
-#         fstype: ext4
-#         size: 1G
-#         volumeMode: Filesystem
-#       - volumes_per_node: 5
-#         fstype: ext4
-#         size: 10G
-#         volumeMode: Filesystem
-#       # - volumes_per_node: 1
-#       #   fstype: ext4
-#       #   size: 10G
-#       #   volumeMode: Filesystem
-#       #   name: etcd
-#   ssd:
-#     block_devices: /dev/vdc
-#     volumes:
-#       - volumes_per_node: 1
-#         fstype: ext4
-#         size: 150G
-#         volumeMode: Filesystem
-#         name: m3db # !Optional but important var. Is required by backup job.
-
-# ingress_fqdn: ingressltm.sulzer.de
   
 ###############################################################
 #### Sulzer                                              ######

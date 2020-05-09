@@ -1,4 +1,49 @@
-# Deploy a Production Ready Kubernetes Cluster
+# Kubespray 
+This repo is a fork of the official kubespray (https://github.com/kubernetes-sigs/kubespray#requirements). Intention is to add and maintain features like host preperation, pesistent storage, host monitoring etc. as well as to mirror deployed clusters whether they are dev, int or prod. This idea is mapped to branches:
+
+- feature/hostprep
+- feature/monitoring
+- ...
+- dev/ltm
+- int/ltm
+- prod/ltm
+
+- dev/infra
+- ...
+
+Please take a look at git graph and familiarize yourself with present commit strategy.
+
+
+## How this repo & branch was created
+``` bash
+git clone https://github.com/kubernetes-sigs/kubespray.git
+git pull --all
+git fetch --all
+git checkout release-2.12
+git remote remove origin 
+git remote add origin https://git.sulzer.de/infac/kubespray.git
+git push origin --all
+git push origin --tags
+git remote add upstream https://github.com/kubernetes-sigs/kubespray.git
+git fetch upstream release-2.13
+git checkout release-2.13
+git push origin --all
+git push origin --tags
+
+git checkout tags/v2.13.0
+git checkout -b feature/hostprep
+
+< did some changes > 
+
+git add .
+git commit -m "my changes"
+
+git push origin feature/hostprep
+
+```
+
+
+## Deploy a Production Ready Kubernetes Cluster
 
 ![Kubernetes Logo](https://raw.githubusercontent.com/kubernetes-sigs/kubespray/master/docs/img/kubernetes-logo.png)
 

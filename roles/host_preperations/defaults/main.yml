@@ -1,11 +1,63 @@
 ---
-# defaults file for devstack_preperations
-backup_jobs:
-  - name: m3db
-    volume_group: vg.data.ssd
-    cron_timer: '0 2 * * *' #every day at 2am
-    backups: 31
-  - name: etcd-indi
-    volume_group: vg.data.hdd
-    cron_timer: '0 2 * * *' #every day at 2am
-    backups: 31
+misc:
+  packages:
+    redhat:
+      - lvm2
+      - cifs-utils
+      - tree
+      - net-tools
+      - vim
+    debian:
+      - lvm2
+      - cifs-utils
+      - tree
+      - net-tools
+      - vim
+
+manage_firewall: false
+firewall:
+  ports:
+    - { "port": "22", "proto": "tcp", "src": "0.0.0.0/0", "program": "sshd" }
+    - { "port": "25", "proto": "tcp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "53", "proto": "tcp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "111", "proto": "tcp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "80", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "443", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "2379-2380", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "6443", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8001", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8080-8081", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8443", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "9100", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "9253-9254", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "9353", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "10248-10259", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "30000-32767", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "37239", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "43165", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "46721", "proto": "tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "53", "proto": "udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "68", "proto": "udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "111", "proto": "udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "323", "proto": "udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "781", "proto": "udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "936", "proto": "udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "8285", "proto": "udp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8472", "proto": "udp", "src": "0.0.0.0/0", "program": "kubernetes" }
+
+k8s_internal_interface_wifi: false
+# k8s_internal_interface: wlp0s20f0u10
+# k8s_internal_interface_wifi: true
+# k8s_internal_interface_connections: 
+#   - FRITZ-Box_7590_ZM_5Ghz
+  
+kernel:
+  version:
+    redhat: kernel-ml-5.6.10-1.el7.elrepo.x86_64
+    debian: linux-image-unsigned-5.3.0-46-generic
+
+
+# timeservers:
+#   - 172.17.0.8
+#   - 172.17.0.9
+#   - 0.de.pool.ntp.org

@@ -191,10 +191,21 @@
     - "chown -R {{ansible_user}}:{{ansible_user}} /home/{{ansible_user}}/.kube"
     - "ln -fs /usr/local/bin/kubectl /usr/bin/kubectl"
 
+  - name: get the username running the deploy
+    become: false
+    shell: whoami
+    delegate_to: localhost
+    register: username_on_the_host
+
+  - name: create dir if not present
+    become: false
+    shell: "mkdir -p /home/{{username_on_the_host.stdout}}/.kube"
+    delegate_to: localhost
+
   - name: get config file
     fetch:
       src: "/home/{{ansible_user}}/.kube/config"
-      dest: "/home/{{local_user}}/.kube/config_{{ deployment.name }}"
+      dest: "/home/{{username_on_the_host.stdout}}/.kube/config_{{ deployment.name | default('config_last') }}"
       flat: yes
     run_once: yes
   
@@ -205,6 +216,15 @@
   - post_install_tasks
   - selinux_enforcing
   tasks:
+    - name: set selinux to permissive for installation time
+      block:
+      - name: build and load policy
+        shell: "/home/{{ansible_user}}/sepolicies/kubernetes/kubernetes.sh"
+    
+      - name: Install rpm (pp-file, policy manual and interface)
+        shell: "rpm -ivh --force /home/{{ansible_user}}/sepolicies/kubernetes/noarch/*.rpm"
+      
+      when: ansible_os_family == "RedHat"
     - name: Set SELinux enforcing
       selinux:
         state: enforcing

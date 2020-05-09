@@ -1,30 +1,18 @@
 ---
-- name: Set SELinux permissive
-  selinux:
-    state: permissive
-    policy: targeted
-  register: selinux
+# - name: force yum to use ipv4
+#   lineinfile:
+#     path: /etc/yum.conf
+#     state: present
+#     regexp: '^ip_resolve='
+#     line: "ip_resolve=4"
 
-- name: Reboot machine
-  reboot:
-    connect_timeout: 10
-    reboot_timeout: 600
-  when: selinux.reboot_required
-
-- name: Set SELinux permissive
-  selinux:
-    state: permissive
-    policy: targeted
-  register: selinux
-
-- name: install lvm2
-  yum:
-    name:
-    - lvm2
-    - cifs-utils
-    - tree
-    - net-tools
-    - vim
+- name: install utils
+  package:
+    name: "{{ misc_packages }}"
     update_cache: yes
   environment: "{{ environment_variables | default({}) }}"
+
+- name: set hostname
+  hostname:
+    name: "{{ansible_hostname}}"
 
