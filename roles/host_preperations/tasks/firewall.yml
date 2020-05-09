@@ -1,0 +1,63 @@
+---
+- name: Ensure firewalld is started
+  systemd:
+    name: firewalld
+    enabled: yes
+    state: started
+
+- name: firewalld settings
+  block:
+  - name: Set firewalld rules
+    firewalld:
+      zone: work
+      port: "{{item.port}}/{{item.proto}}"
+      #source: "{{item.src}}"
+      state: enabled
+      permanent: true
+      immediate: yes
+    register: ports
+    with_items: "{{ firewall.ports }}"
+
+  - name: Activate zone by adding private interface to it
+    firewalld:
+      interface : "{{ k8s_internal_interface }}"
+      zone: work
+      state: enabled
+      permanent: true
+      immediate: yes
+
+  - name: persist zone over reboot
+    lineinfile:
+      path: "/etc/sysconfig/network-scripts/ifcfg-{{k8s_internal_interface}}"
+      regexp: '(?i)^zone='
+      line: ZONE=work
+    when: k8s_internal_interface_wifi == false
+
+  - name: persist zone over reboot
+    lineinfile:
+      path: "/etc/sysconfig/network-scripts/ifcfg-{{item}}"
+      regexp: '(?i)^zone='
+      line: ZONE=work
+    loop: "{{ k8s_internal_interface_connections }}"
+    when: k8s_internal_interface_wifi == true
+
+  when: ansible_os_family == "RedHat"
+
+- name: ufw settings
+  ufw:
+    rule: allow
+    interface: "{{ k8s_internal_interface }}"
+    direction: in
+    proto: "{{item.proto}}"
+    #src: 1.2.3.5
+    #dest: 1.2.3.4
+    to_port: "{{item.port | regex_replace('-',':')}}"
+  register: ports
+  with_items: "{{ firewall.ports }}"
+  when: ansible_os_family == "Debian"
+
+- debug:
+    var: ports
+
+    
+

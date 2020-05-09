@@ -1,0 +1,55 @@
+# Please refer to https://blogs.rdoproject.org/2017/09/selinux-policy-from-the-ground-up/ if questions come up
+---
+- name: set selinux to permissive for installation time
+  block:
+  - name: Set SELinux permissive
+    selinux:
+      state: permissive
+      policy: targeted
+    register: selinux
+
+  - name: Reboot machine
+    reboot:
+      connect_timeout: 10
+      reboot_timeout: 600
+    when: selinux.reboot_required
+
+  - name: Set SELinux permissive
+    selinux:
+      state: permissive
+      policy: targeted
+    register: selinux
+
+  - name: install se utils
+    yum:
+      name:
+      - policycoreutils-devel
+      - rpm-build
+      update_cache: yes
+    environment: "{{ environment_variables | default({}) }}"
+
+  - name: create dir
+    file:
+      path: /home/{{ansible_user}}/sepolicies/kubernetes
+      state: directory
+
+  - name: place sepolicy files
+    copy:
+      src: sepolicy/
+      dest: /home/{{ansible_user}}/sepolicies/kubernetes/
+
+  - name: Change mode for file
+    file:
+      path: "/home/{{ansible_user}}/sepolicies/kubernetes/kubernetes.sh"
+      owner: root
+      group: root
+      mode: 0755
+  ## Build and load can only be triggered after docker has been installed.
+  ## Therefore this was moved to cluster.yml
+  # - name: build and load policy
+  #   shell: "/home/{{ansible_user}}/sepolicies/kubernetes/kubernetes.sh"
+
+  # - name: Install rpm (pp-file, policy manual and interface)
+  #   shell: "rpm -ivh --force /home/{{ansible_user}}/sepolicies/kubernetes/noarch/*.rpm"
+  
+  when: ansible_os_family == "RedHat"

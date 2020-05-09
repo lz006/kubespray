@@ -1,23 +1,17 @@
 ---
 # tasks file for devstack_preperations
+- include: set_facts.yml
 - include: 'misc.yml'
-- include: 'se_policy_packaging.yml'
-- include: 'net.yml'
+- include: 'selinux.yml'
+
+- include: 'firewall.yml'
+  when: manage_firewall == true
+
 - include: 'kernel_update.yml'
 - include: 'kernel_tweaks.yml'
 
 - include: 'chrony_setup.yml'
   when: "timeservers is defined"
-
-- include: 'lvmd.yml'
-  when: 
-  - "'lvmd' in group_names"
-  - "volume_groups is defined"
-
-# - include: 'k8s_local_volumes_backup.yml'
-#   when: 
-#   - "'local-volume-provisioner-node' in group_names"
-#   - "logical_volumes is defined"
   
 - include: 'lvm_docker.yml'
   when: "'docker-container-lvm' in group_names"

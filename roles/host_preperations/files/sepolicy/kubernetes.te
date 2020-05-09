@@ -22,8 +22,9 @@ allow container_t self:dir add_name;
 allow container_t var_lib_t:dir { add_name create remove_name rename rmdir write };
 container_manage_lib_files(container_t)
 corecmd_manage_sbin_files(container_t)
+#corecmd_manage_bin_files(container_t)
 cups_filetrans_named_content(container_t)
-docker_manage_lib_dirs(container_t)
+#docker_manage_lib_dirs(container_t)
 files_manage_etc_files(container_t)
 files_manage_urandom_seed(container_t)
 files_manage_usr_files(container_t)
