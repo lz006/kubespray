@@ -1,4 +1,21 @@
 ---
+#######################################################
+###### Sulzer Start ###################################
+#######################################################
+
+- hosts: all
+  become: yes
+  any_errors_fatal: yes
+  tasks:
+  roles:
+    - host_preperations
+  tags:
+    - host_prep
+   
+#######################################################
+###### Sulzer Stop ####################################
+#######################################################
+
 - name: Check ansible version
   import_playbook: ansible_version.yml
 
@@ -135,3 +152,78 @@
   roles:
     - { role: kubespray-defaults }
     - { role: kubernetes/preinstall, when: "dns_mode != 'none' and resolvconf_mode == 'host_resolvconf'", tags: resolvconf, dns_late: true }
+
+
+#######################################################
+###### Sulzer Start ###################################
+#######################################################
+- hosts: all
+  become: yes
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  tags:
+  - post_install_tasks
+  tasks:
+  - name: Set cni0 to trusted zone of firewalld
+    firewalld:
+      interface : "cni0"
+      zone: trusted
+      state: enabled
+      permanent: true
+      immediate: yes
+    when: "firewall | default('') == 'firewalld'"  
+
+  - name: Ensure firewalld is reloaded
+    systemd:
+      name: firewalld
+      enabled: yes
+      state: reloaded
+    when: "firewall | default('') == 'firewalld'"
+
+
+- hosts: kube-master
+  become: yes
+  any_errors_fatal: "{{ any_errors_fatal | default(true) }}"
+  tags:
+  - post_install_tasks
+  tasks:
+  - name: Make kubectl and kubeconf accessible
+    shell: "{{ item }}"
+    with_items:
+    - "cp -r /root/.kube /home/{{ansible_user}}"
+    - "chown -R {{ansible_user}}:{{ansible_user}} /home/{{ansible_user}}/.kube"
+    - "ln -fs /usr/local/bin/kubectl /usr/bin/kubectl"
+
+  - name: get config file
+    fetch:
+      src: "/home/{{ansible_user}}/.kube/config"
+      dest: "/home/{{local_user}}/.kube/config_{{ deployment.name }}"
+      flat: yes
+    run_once: yes
+  
+- hosts: all
+  become: yes
+  serial: 1
+  tags:
+  - post_install_tasks
+  - selinux_enforcing
+  tasks:
+    - name: Set SELinux enforcing
+      selinux:
+        state: enforcing
+        policy: targeted
+      register: selinux_postinstall
+
+    - name: Reboot machine
+      reboot:
+        connect_timeout: 10
+        reboot_timeout: 600
+      when: selinux_postinstall.reboot_required
+
+    - name: Ensure SELinux is set to enforcing
+      selinux:
+        state: enforcing
+        policy: targeted
+
+#######################################################
+###### Sulzer Stop  ###################################
+#######################################################

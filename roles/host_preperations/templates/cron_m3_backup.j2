@@ -1,0 +1,4 @@
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+{% for b in backup_jobs %}
+{{ b['cron_timer'] }} root /bin/bash /usr/local/m3/backup_{{ b['name'] }}.sh
+{% endfor %}

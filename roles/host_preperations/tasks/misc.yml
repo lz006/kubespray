@@ -1,0 +1,30 @@
+---
+- name: Set SELinux permissive
+  selinux:
+    state: permissive
+    policy: targeted
+  register: selinux
+
+- name: Reboot machine
+  reboot:
+    connect_timeout: 10
+    reboot_timeout: 600
+  when: selinux.reboot_required
+
+- name: Set SELinux permissive
+  selinux:
+    state: permissive
+    policy: targeted
+  register: selinux
+
+- name: install lvm2
+  yum:
+    name:
+    - lvm2
+    - cifs-utils
+    - tree
+    - net-tools
+    - vim
+    update_cache: yes
+  environment: "{{ environment_variables | default({}) }}"
+

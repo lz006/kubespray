@@ -1,0 +1,160 @@
+#!/bin/bash
+
+#######################################################
+######### Begin of VAR Section ########################
+#######################################################
+
+## backed service (e.g. m3db, etcd)
+service={{ item.name }}
+
+## log tag for search in journald
+m3tag=m3-${service}-backup
+
+## volume group of lv to be snapshotted
+vg={{ item.volume_group }}
+
+## lv to be snapshotted
+lv=${service}
+
+## declare snpashot name
+snapname=snap-${vg}-${lv}-${HOSTNAME}
+
+## snapshot size for taking diff into account:
+## -> as we are creating cow snapshot we need to provide enough space to take 
+## ongoing writes into account until snapshot gets dropped, if snapshot runs 
+## out of space writes will fail for both snapshot and original lv!!!
+##
+## As snapshotting volumes comes with costs at I/O it's better to drop
+## snapshot as soon as possible. In this script we are going to remove snapshot 
+## immediately after archive has been created. So we need enough space to hold 
+## writes during this time window.
+##
+## (But removing snapshot comes with downside of more complex and slow restore 
+## procedure as we cannot make use of 'lvconvert --merge <snapshot>')
+snapsize=3%VG
+
+## filer to mount to (entire path must exist beforehand)
+filerpath=//scratch.sulzer.de/share/serviceautomation
+
+## local filer mount point
+filermp=/mnt/filer-backup/{{ item.name }}
+
+## filer mount options
+filermntopts=username=root,password=,noperm,vers=2.0,nofail
+
+## filer fs type (required libs must be available, for example 'cifs' needs 'cifs-utils' installed)
+filerfs=cifs
+
+## local lvm snapshot mount point
+snapmp=/mnt/local-lvm-backup/m3/${service}
+
+## Number of backups that should prevail
+## e.g. when 31 backups are desired, we specify that all backups from 32th should be deleted
+backupdeletefrom={{ item.backups +1 }}
+
+#######################################################
+######### End of VAR Section ##########################
+#######################################################
+
+cleanup() {
+  {
+    ## unmount snapshot
+    if mountpoint -q "${snapmp}"
+    then
+      umount ${snapmp} || umount --force ${snapmp} 2>> /tmp/${snapname}-cleanup-error.log;
+    fi
+
+    ## remove snapshot to unload I/O
+    lvdisplay /dev/${vg}/${snapname} 2> /dev/null && \
+    (lvremove -y /dev/${vg}/${snapname} || lvremove --force /dev/${vg}/${snapname} 2>> /tmp/${snapname}-cleanup-error.log);
+
+    ## unmount filer
+    if mountpoint -q "${filermp}"
+    then
+      umount ${filermp} || umount --force ${filermp} 2>> /tmp/${snapname}-cleanup-error.log;
+    fi
+
+  } || {
+    logger -p local0.error -t ${m3tag} "Clean up failed please see /tmp/${snapname}-cleanup-error.log. Exit script.";
+  }
+}
+
+## first check if volume to be backed up is present
+lvdisplay /dev/${vg}/${lv} || \
+{ logger -p local0.warn -t ${m3tag} "No logical volume named ${vg}/${lv} found. Stop backing up. Exit script."; cleanup; exit 0; }
+
+## remove pre-existing snapshot if present
+cleanup;
+
+## now create actual point-in-time cow snapshot
+lvcreate -l ${snapsize} -s -n ${snapname} /dev/${vg}/${lv} 2> /tmp/${snapname}-error.log;
+if [ $? -ne 0 ]
+then
+  logger -p local0.error -t ${m3tag} "Could not create snapshot please see /tmp/${snapname}-error.log. Exit script.";
+  cleanup;
+  exit 1;
+else
+  logger -p local0.info -t ${m3tag} "Snapshot created";
+fi
+
+## create snapshot mount point if not present
+mkdir -p ${snapmp};
+
+## mount just created snapshot
+mount /dev/${vg}/${snapname} ${snapmp} 2> /tmp/${snapname}-error.log;
+if [ $? -ne 0 ]
+then
+  logger -p local0.error -t ${m3tag} "Could not mount snapshot please see /tmp/${snapname}-error.log. Exit script.";
+  cleanup;
+  exit 1;
+else
+  logger -p local0.info -t ${m3tag} "Snapshot mounted";
+fi
+
+## create filer mount point if not present
+mkdir -p ${filermp};
+
+## mount filer
+mount ${filerpath} ${filermp} -t ${filerfs} -o ${filermntopts} 2> /tmp/${snapname}-error.log;
+if [ $? -ne 0 ]
+then
+  logger -p local0.error -t ${m3tag} "Could not mount filer please see /tmp/${snapname}-error.log. Exit script.";
+  cleanup;
+  exit 1;
+else
+  logger -p local0.info -t ${m3tag} "Filer mounted";
+fi
+
+## create dirs on filer if not present
+mkdir -p ${filermp}/m3/${service}/${HOSTNAME};
+
+## archive entire content from local mounted lv snapshot to filer
+tar -czf ${filermp}/m3/${service}/${HOSTNAME}/${snapname}-$(date +%Y%m%d_%H%M%S).tar.gz -C ${snapmp} . \
+2> /tmp/${snapname}-error.log;
+if [ $? -ne 0 ]
+then
+  logger -p local0.error -t ${m3tag} "Snapshot could not be archived to filer please see /tmp/${snapname}-error.log. Exit script.";
+  cleanup;
+  exit 1;
+else
+  logger -p local0.info -t ${m3tag} "Snapshot successfully archived and saved to filer";
+
+  ## rotate files so that only 31 youngest backups survive
+  if [ `ls -1 ${filermp}/m3/${service}/${HOSTNAME}/${snapname}-* | sort -r | tail -n +${backupdeletefrom} | wc -l` -gt 0 ]
+  then
+    ls -1 ${filermp}/m3/${service}/${HOSTNAME}/${snapname}-* | sort -r | tail -n +${backupdeletefrom} | xargs rm -f 2> /tmp/${snapname}-rotation-error.log;
+    if [ $? -ne 0 ]
+    then
+      logger -p local0.error -t ${m3tag} "Could not rotate backups on filer please see /tmp/${snapname}-rotation-error.log. Exit script.";
+      exit 1;
+    else
+      logger -p local0.info -t ${m3tag} "Backup rotation on filer succeeded";
+    fi
+  fi
+
+  cleanup;
+fi
+
+
+
+

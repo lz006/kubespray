@@ -1,0 +1,11 @@
+---
+# defaults file for devstack_preperations
+backup_jobs:
+  - name: m3db
+    volume_group: vg.data.ssd
+    cron_timer: '0 2 * * *' #every day at 2am
+    backups: 31
+  - name: etcd-indi
+    volume_group: vg.data.hdd
+    cron_timer: '0 2 * * *' #every day at 2am
+    backups: 31

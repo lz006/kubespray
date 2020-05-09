@@ -1,0 +1,40 @@
+---
+- name: Create a volume group for docker container rw layer
+  lvg: 
+    vg: vg.docker
+    pvs: "{{ docker_container_block_devices_for_lvm }}"
+
+- debug:
+    msg: "{{not ('docker' in ansible_lvm['lvs'])}}"
+- debug:
+    var: "{{ ansible_lvm['lvs'] }}"
+
+- name: Create lvol
+  lvol:
+    vg: "vg.docker"
+    lv: "docker"
+    size: "100%FREE"
+    force: no
+    state: present
+  when: "not ('docker' in ansible_lvm['lvs'])"
+
+- name: Create filesystem on /dev/mapper/vg.docker-...
+  filesystem:
+    fstype: "ext4"
+    dev: "/dev/mapper/vg.docker-docker"
+
+- name: Create directories for filesystem volumes
+  file:
+    path: "/var/lib/docker"
+    state: directory
+
+- name: mount logical volume for filesystem volumes
+  mount:
+    src: "/dev/mapper/vg.docker-docker"
+    path: "/var/lib/docker"
+    fstype: "ext4"
+    dump: 0
+    passno: 0
+    opts: "defaults"
+    state: mounted
+

@@ -1,0 +1,22 @@
+all:
+  hosts:
+    xpc:
+      ansible_host: 192.168.178.30
+      ip: 192.168.178.30
+      access_ip: 192.168.178.30
+  children:
+    kube-master:
+      hosts:
+        xpc:
+    kube-node:
+      hosts:
+        xpc:
+    etcd:
+      hosts:
+        xpc:
+    k8s-cluster:
+      children:
+        kube-master:
+        kube-node:
+    calico-rr:
+      hosts: {}
