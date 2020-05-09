@@ -1,0 +1,81 @@
+---
+- name: Ensure firewalld is started
+  systemd:
+    name: firewalld
+    enabled: yes
+    state: started
+  when: "firewall | default('') == 'firewalld'"
+
+- name: Activate zone by adding private interface to it
+  firewalld:
+    interface : "{{ private_interface }}"
+    zone: work
+    state: enabled
+    permanent: true
+    immediate: yes
+  when: "firewall | default('') == 'firewalld'"
+
+- name: persist zone over reboot
+  lineinfile:
+    path: "/etc/sysconfig/network-scripts/ifcfg-{{private_interface}}"
+    line: ZONE=work
+
+- name: Set firewalld rules
+  firewalld:
+    zone: work
+    port: "{{item.port}}"
+    #source: "{{item.src}}"
+    state: enabled
+    permanent: true
+    immediate: yes
+  register: ports
+  with_items:
+    - { "port": "22/tcp", "src": "0.0.0.0/0", "program": "sshd" }
+    - { "port": "25/tcp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "53/tcp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "111/tcp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "80/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "443/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "2379-2380/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "6443/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8001/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8080-8081/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8443/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "9100/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "9253-9254/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "9353/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "10248-10259/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "30000-32767/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "37239/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "43165/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "46721/tcp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "53/udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "68/udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "111/udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "323/udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "781/udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "936/udp", "src": "0.0.0.0/0", "program": "misc" }
+    - { "port": "8285/udp", "src": "0.0.0.0/0", "program": "kubernetes" }
+    - { "port": "8472/udp", "src": "0.0.0.0/0", "program": "kubernetes" }
+  when: "firewall | default('') == 'firewalld'"
+
+- debug:
+    var: ports
+
+# - name: Reload firewalld
+#   systemd:
+#     name: firewalld
+#     enabled: yes
+#     state: reloaded
+#   when: "firewall | default('') == 'firewalld'"
+    
+- name: set hostname
+  hostname:
+    name: "{{ansible_hostname}}"
+
+- name: force yum to use ipv4
+  lineinfile:
+    path: /etc/yum.conf
+    state: present
+    regexp: '^ip_resolve='
+    line: "ip_resolve=4"

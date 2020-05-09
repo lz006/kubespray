@@ -1,0 +1,177 @@
+---
+###############################################################
+#### Sulzer                                              ######
+###############################################################
+## Encryption command: 
+## ansible-vault encrypt_string --vault-password-file vault_key --name 'nameofmysecret'
+
+deployment:
+  name: lvmd-dev
+
+#private_interface: eth1
+
+ansible_user: myuser
+ansible_ssh_pass: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  37616534336134393436303964353736336539343935313936626333653265346139316231653939
+  6130373264623363333639323832353030376236323831360a326238393464383966636466303530
+  36366234636237366335613536343433303766623832616135383737626164343634386634666265
+  6336396432363231320a303932373139396133353132656337393638326332346639316236363364
+  3037
+ansible_become_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  37616534336134393436303964353736336539343935313936626333653265346139316231653939
+  6130373264623363333639323832353030376236323831360a326238393464383966636466303530
+  36366234636237366335613536343433303766623832616135383737626164343634386634666265
+  6336396432363231320a303932373139396133353132656337393638326332346639316236363364
+  3037
+# Optional but overwrites existing conf
+# timeservers:
+#   - 172.17.0.8
+#   - 172.17.0.9
+#   - 0.de.pool.ntp.org
+
+kernel_target: kernel-ml-5.5.11-1.el7.elrepo
+
+# environment_variables:
+#   http_proxy: "http://172.21.0.10:88"
+
+#firewall: firewalld
+
+### Logical volumes for docker container rw-layer
+### -> Applies only to hosts in group: docker-container-lvm
+#docker_container_block_devices_for_lvm: /dev/vdb
+
+# logical_volumes:
+# ## Note: list can be complented by specifying var "additional_logical_volumes"
+# ## in host_vars in order to define host specifc volumes
+#   hdd: 
+#     ## Comma delimited devices, e.g. /dev/sdb,/dev/sdc
+#     block_devices: /dev/vdb
+#     volumes:
+#       - volumes_per_node: 10
+#         fstype: ext4
+#         size: 1G
+#         volumeMode: Filesystem
+#       - volumes_per_node: 5
+#         fstype: ext4
+#         size: 10G
+#         volumeMode: Filesystem
+#       # - volumes_per_node: 1
+#       #   fstype: ext4
+#       #   size: 10G
+#       #   volumeMode: Filesystem
+#       #   name: etcd
+#   ssd:
+#     block_devices: /dev/vdc
+#     volumes:
+#       - volumes_per_node: 1
+#         fstype: ext4
+#         size: 150G
+#         volumeMode: Filesystem
+#         name: m3db # !Optional but important var. Is required by backup job.
+
+# ingress_fqdn: ingressltm.sulzer.de
+  
+###############################################################
+#### Sulzer                                              ######
+###############################################################
+
+
+## Directory where etcd data stored
+etcd_data_dir: /var/lib/etcd
+
+## Experimental kubeadm etcd deployment mode. Available only for new deployment
+etcd_kubeadm_enabled: false
+
+## Directory where the binaries will be installed
+bin_dir: /usr/local/bin
+
+## The access_ip variable is used to define how other nodes should access
+## the node.  This is used in flannel to allow other flannel nodes to see
+## this node for example.  The access_ip is really useful AWS and Google
+## environments where the nodes are accessed remotely by the "public" ip,
+## but don't know about that address themselves.
+# access_ip: 1.1.1.1
+
+
+## External LB example config
+## apiserver_loadbalancer_domain_name: "elb.some.domain"
+# loadbalancer_apiserver:
+#   address: 1.2.3.4
+#   port: 1234
+
+## Internal loadbalancers for apiservers
+# loadbalancer_apiserver_localhost: true
+# valid options are "nginx" or "haproxy"
+# loadbalancer_apiserver_type: nginx # valid values "nginx" or "haproxy"
+
+## Local loadbalancer should use this port
+## And must be set port 6443
+loadbalancer_apiserver_port: 6443
+
+## If loadbalancer_apiserver_healthcheck_port variable defined, enables proxy liveness check for nginx.
+loadbalancer_apiserver_healthcheck_port: 8081
+
+### OTHER OPTIONAL VARIABLES
+## For some things, kubelet needs to load kernel modules.  For example, dynamic kernel services are needed
+## for mounting persistent volumes into containers.  These may not be loaded by preinstall kubernetes
+## processes.  For example, ceph and rbd backed volumes.  Set to true to allow kubelet to load kernel
+## modules.
+# kubelet_load_modules: false
+
+## Upstream dns servers
+# upstream_dns_servers:
+#   - 8.8.8.8
+#   - 8.8.4.4
+
+## There are some changes specific to the cloud providers
+## for instance we need to encapsulate packets with some network plugins
+## If set the possible values are either 'gce', 'aws', 'azure', 'openstack', 'vsphere', 'oci', or 'external'
+## When openstack is used make sure to source in the openstack credentials
+## like you would do when using openstack-client before starting the playbook.
+# cloud_provider:
+
+## When cloud_provider is set to 'external', you can set the cloud controller to deploy
+## Supported cloud controllers are: 'openstack' and 'vsphere'
+## When openstack or vsphere are used make sure to source in the required fields
+# external_cloud_provider:
+
+## Set these proxy values in order to update package manager and docker daemon to use proxies
+# http_proxy: ""
+# https_proxy: ""
+
+## Refer to roles/kubespray-defaults/defaults/main.yml before modifying no_proxy
+# no_proxy: ""
+
+## Some problems may occur when downloading files over https proxy due to ansible bug
+## https://github.com/ansible/ansible/issues/32750. Set this variable to False to disable
+## SSL validation of get_url module. Note that kubespray will still be performing checksum validation.
+# download_validate_certs: False
+
+## If you need exclude all cluster nodes from proxy and other resources, add other resources here.
+# additional_no_proxy: ""
+
+## Certificate Management
+## This setting determines whether certs are generated via scripts.
+## Chose 'none' if you provide your own certificates.
+## Option is  "script", "none"
+## note: vault is removed
+# cert_management: script
+
+## Set to true to allow pre-checks to fail and continue deployment
+# ignore_assert_errors: false
+
+## The read-only port for the Kubelet to serve on with no authentication/authorization. Uncomment to enable.
+# kube_read_only_port: 10255
+
+## Set true to download and cache container
+# download_container: true
+
+## Deploy container engine
+# Set false if you want to deploy container engine manually.
+# deploy_container_engine: true
+
+## Set Pypi repo and cert accordingly
+# pyrepo_index: https://pypi.example.com/simple
+# pyrepo_cert: /etc/ssl/certs/ca-certificates.crt

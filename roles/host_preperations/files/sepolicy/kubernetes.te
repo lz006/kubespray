@@ -1,0 +1,52 @@
+policy_module(kubernetes, 1.0.0)
+
+
+require {
+        type iptables_t;
+        type var_lib_t;
+        type container_t;
+        type chkpwd_t;
+        type sshd_t;
+        type firewalld_t;
+        type systemd_tmpfiles_t;
+        type insmod_t;
+        class dir { add_name create remove_name rename rmdir write };
+        class capability net_admin;
+        class process { noatsecure rlimitinh siginh };
+}
+
+#============= container_t ==============
+allow container_t self:dir add_name;
+
+#!!!! WARNING: 'var_lib_t' is a base type.
+allow container_t var_lib_t:dir { add_name create remove_name rename rmdir write };
+container_manage_lib_files(container_t)
+corecmd_manage_sbin_files(container_t)
+cups_filetrans_named_content(container_t)
+docker_manage_lib_dirs(container_t)
+files_manage_etc_files(container_t)
+files_manage_urandom_seed(container_t)
+files_manage_usr_files(container_t)
+files_read_var_lib_symlinks(container_t)
+files_rw_etc_dirs(container_t)
+files_rw_usr_dirs(container_t)
+fs_noxattr_type(container_t)
+fs_read_tmpfs_files(container_t)
+
+#============= iptables_t ==============
+networkmanager_read_state(iptables_t)
+allow iptables_t insmod_t:process { noatsecure rlimitinh siginh };
+
+
+#============= firewalld_t ==============
+allow firewalld_t insmod_t:process { noatsecure rlimitinh siginh };
+allow firewalld_t iptables_t:process { noatsecure rlimitinh siginh };
+
+
+#============= sshd_t ==============
+allow sshd_t chkpwd_t:process { noatsecure rlimitinh siginh };
+
+
+#============= systemd_tmpfiles_t ==============
+allow systemd_tmpfiles_t self:capability net_admin;
+

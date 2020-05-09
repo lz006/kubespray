@@ -1,0 +1,24 @@
+---
+- name: install utils
+  yum:
+    name:
+    - chrony
+    update_cache: yes
+  environment: "{{ environment_variables | default({}) }}"
+- name: Copy chrony config file
+  template:
+    src: slave-chrony.conf.j2
+    dest: /etc/chrony.conf
+    owner: root
+    group: root
+    mode: 0644
+- name: Enable chrony deamon
+  systemd:
+    name: chronyd
+    enabled: yes
+    state: restarted
+- name: Check chrony sync
+  shell: 'chronyc sources -v'
+  register: chrony_output
+- debug:
+    msg: "{{chrony_output.stdout}}"

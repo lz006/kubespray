@@ -1,0 +1,13 @@
+---
+- name: set kernel tweaks persistently (according to https://m3db.github.io/m3/operational_guide/kernel_configuration/)
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+    sysctl_file: /etc/sysctl.conf
+  with_items:
+    - {"name": "vm.max_map_count", "value": "3000000"}
+    - {"name": "vm.swappiness", "value": "1"}
+    - {"name": "fs.file-max", "value": "3000000"}
+    - {"name": "fs.nr_open", "value": "3000000"}

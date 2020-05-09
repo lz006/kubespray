@@ -1,0 +1,54 @@
+---
+- name: get current kernel
+  shell: uname -r
+  register: kernel
+
+- name: install kernel packages if necessary
+  block:
+  - name: accelerate installation
+    yum:
+      name:
+      - yum-plugin-fastestmirror
+      update_cache: yes
+    environment: "{{ environment_variables | default({}) }}"
+
+  - name: add rpm key
+    rpm_key:
+      state: present
+      key: https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+    environment: "{{ environment_variables | default({}) }}"
+
+  - name: Add repository
+    yum:
+      name: https://www.elrepo.org/elrepo-release-7.0-4.el7.elrepo.noarch.rpm
+      state: present
+    environment: "{{ environment_variables | default({}) }}"
+    
+  - name: install kernel packages
+    yum:
+      name: "{{ kernel_target }}"
+      enablerepo: elrepo-kernel
+      update_cache: yes
+    environment: "{{ environment_variables | default({}) }}"
+
+  - name: Make new kernel version as default
+    shell: "{{item}}"
+    with_items:
+    - grub2-set-default 0
+    - grub2-mkconfig -o /boot/grub2/grub.cfg
+
+  - name: Reboot machine
+    reboot:
+      connect_timeout: 120
+      reboot_timeout: 600
+  when: >
+    kernel_target | regex_replace('kernel-ml-') + '.x86_64' != kernel.stdout
+    and
+    kernel_target | regex_replace('kernel-lt-') + '.x86_64' != kernel.stdout
+
+- name: get current kernel
+  shell: uname -msr
+  register: kernel
+
+- debug:
+    msg: "{{kernel.stdout}}"
