@@ -41,10 +41,13 @@
       reboot:
         connect_timeout: 120
         reboot_timeout: 600
-  when:
-    - kernel_target | regex_replace('kernel-ml-') + '.x86_64' != kernel.stdout
-    - kernel_target | regex_replace('kernel-lt-') + '.x86_64' != kernel.stdout
-    - ansible_os_family == "RedHat"
+  when: >
+    kernel_target | regex_replace('kernel-ml-') != kernel.stdout
+    and
+    kernel_target | regex_replace('kernel-lt-') != kernel.stdout
+    and
+    ansible_os_family == "RedHat"
+
 
 - name: update kernel on debian os
   block:
@@ -63,7 +66,7 @@
     - ansible_os_family == "Debian"
 
 - name: get current kernel
-  shell: uname -msr
+  shell: uname -r
   register: kernel
 
 - debug:
