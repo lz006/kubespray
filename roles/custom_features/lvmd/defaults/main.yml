@@ -1,0 +1,48 @@
+---
+# defaults file for lvmd
+
+lvmd_version: 0.4.7
+
+lvmd_cert_manager_exists: true
+## Api version will be detected if not specified
+#lvmd_cert_manager_apiVersion: certmanager.k8s.io/v1alpha1
+
+
+## Prefix is needed in future releases (0.5+) to enable multiple
+## storageclasses based on volume groups -> vg_X = storageclass_X 
+#lvmd_vg_prefix: lvmd_
+
+## Volume groups with their underlying pvs to be created
+lvmd_volume_groups:
+  lvmd_hdd:
+    pvs:
+      - /dev/sdc
+
+## Volumegroup to be managed by lvmd
+## Necessary if lvmd_version<0.5.0
+lvmd_vg: lvmd_hdd
+
+
+lvmd_k8s_manifests:
+  default:
+    - namespace
+    - crd
+    - psp
+    - certificates
+    - scheduler
+    - mutatingwebhooks
+    - controller
+    - node
+    - storageclass
+  no_cert_manager:
+    - namespace
+    - crd
+    - psp
+    ## TODO: "Prepare the certificate without cert-manager" -> https://github.com/cybozu-go/topolvm/tree/master/deploy
+    #- certificates
+    - scheduler
+    - mutatingwebhooks
+    - controller
+    - node
+    - storageclass
+
