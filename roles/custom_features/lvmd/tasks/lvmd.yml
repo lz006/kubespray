@@ -1,0 +1,70 @@
+---
+# tasks file for lvmd
+- debug:
+    msg: "{{ item.key | lower }}  {{ item.value.pvs | join(',') }}"
+  with_dict: "{{ lvmd_volume_groups }}"
+
+- name: Create a volume groups for lvmd
+  lvg: 
+    vg: "{{ item.key | lower }}"
+    pvs: "{{ item.value.pvs | join(',') }}"
+  with_dict: "{{ lvmd_volume_groups }}"
+
+- name: check if lvmd is already present
+  stat:
+    path: /usr/local/bin/lvmd
+  register: lvmd_binary
+
+- name: get installed version of
+  shell: /usr/local/bin/lvmd --version | awk '{print $3}'
+  register: lvmd_installed_version
+  when: lvmd_binary.stat.exists
+
+- name: take lvmd service down and delete binary
+  block:
+    - shell: /usr/bin/systemctl list-units lvmd.service
+      register: lvmd_service_stat
+      #ignore_errors: yes
+
+    - systemd:
+        name: lvmd.service
+        state: stopped
+      when: lvmd_service_stat is succeeded
+
+    - file:
+        path: /usr/local/bin/lvmd
+        state: absent
+  when: 
+    - lvmd_binary.stat.exists
+    - lvmd_installed_version.stdout != lvmd_version
+
+- name: download and unarchive lvmd
+  unarchive:
+    src: "https://github.com/cybozu-go/topolvm/releases/download/v{{ lvmd_version }}/lvmd-{{ lvmd_version }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: yes
+  environment: "{{ environment_variables | default({}) }}"
+  when: 
+    - lvmd_installed_version is defined
+    - lvmd_installed_version.stdout | default('') != lvmd_version
+
+- name: Place systemd unit file
+  template:
+    src: lvmd.service.j2
+    dest: /usr/lib/systemd/system/lvmd.service
+  register: lvmd_unit_file
+
+- name: Enable and start lvmd service
+  systemd:
+    name: lvmd
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  
+- name: Enable and restart lvmd service
+  systemd:
+    name: lvmd
+    enabled: yes
+    state: restarted
+    daemon_reload: yes
+  when: lvmd_unit_file.changed

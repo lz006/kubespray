@@ -1,0 +1,63 @@
+---
+- name: install pip
+  package:
+    name: 
+      - python3-pip
+      - python-pip
+    update_cache: yes
+  environment: "{{ environment_variables | default({}) }}"
+  when: "'kube-master' in group_names"
+
+- name: install python reqs for openshift lib
+  pip:
+    name: 
+      - setuptools>=44.1.0
+      - wheel
+    executable: pip2.7
+  environment: "{{ environment_variables | default({}) }}"
+
+- name: install python openshift lib
+  pip:
+    name: openshift
+    executable: pip2.7
+  environment: "{{ environment_variables | default({}) }}"
+
+- block:
+    - name: protect system namespace for being mutated through topolvm
+      shell: kubectl label --overwrite=true ns kube-system topolvm.cybozu.com/webhook=ignore
+
+    - name: get cert manager api version
+      shell: "kubectl api-versions | grep -i certmanager.k8s.io/"
+      register: lvmd_cert_manager_apiVersion_detected
+      when:
+        - not (lvmd_cert_manager_apiVersion is defined)
+        - lvmd_cert_manager_exists == true
+
+    - set_fact:
+        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion_detected.stdout }}"
+      when:
+        - not (lvmd_cert_manager_apiVersion is defined)
+        - lvmd_cert_manager_exists == true
+
+    - set_fact:
+        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion }}"
+      when:
+        - lvmd_cert_manager_apiVersion is defined
+        - lvmd_cert_manager_exists == true
+
+    - name: Create lvmd manifests (depending on pre-existing cert-manager)
+      k8s:
+        state: present
+        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
+      loop: "{{ lvmd_k8s_manifests.default }}"
+      when: lvmd_cert_manager_exists == true
+
+    - name: Create lvmd manifests (without need of cert-manager)
+      k8s:
+        state: present
+        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
+      loop: "{{ lvmd_k8s_manifests.no_cert_manager }}"
+      when: lvmd_cert_manager_exists == false
+
+  run_once: yes
+  when: "'kube-master' in group_names"
