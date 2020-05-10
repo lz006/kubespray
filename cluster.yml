@@ -169,14 +169,14 @@
       state: enabled
       permanent: true
       immediate: yes
-    when: "firewall | default('') == 'firewalld'"  
+    when: ansible_os_family == "RedHat" 
 
-  - name: Ensure firewalld is reloaded
-    systemd:
-      name: firewalld
-      enabled: yes
-      state: reloaded
-    when: "firewall | default('') == 'firewalld'"
+  - name: Set cni0 to allow for inbound
+    ufw:
+      rule: allow
+      interface: "cni0"
+      direction: in
+    when: ansible_os_family == "Debian"
 
 
 - hosts: kube-master
