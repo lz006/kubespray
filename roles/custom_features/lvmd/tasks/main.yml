@@ -1,4 +1,21 @@
 ---
 # tasks file for lvmd
+
+# Installation (default)
+- include: 'requirements.yml'
+- include: 'cert_manager.yml'
+  when: lvmd_cert_manager_manage == true
 - include: 'lvmd.yml'
 - include: 'k8s_manifests.yml'
+- include: 'verify_deployment.yml'
+  when: lvmd_uninstall | default(false) == false
+
+## Uninstallation
+- include: 'k8s_manifests_uninstall.yml'
+  when: lvmd_uninstall | default(false) == true
+- include: 'lvmd_uninstall.yml'
+  when: lvmd_uninstall | default(false) == true
+- include: 'cert_manager_uninstall.yml'
+  when: 
+    - lvmd_cert_manager_manage == true
+    - lvmd_uninstall | default(false) == true

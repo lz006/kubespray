@@ -1,0 +1,9 @@
+---
+- block:
+    - name: Delete cert manager manifests
+      k8s:
+        state: absent
+        definition: "{{ lookup('template', '../templates/k8s/certmanager/certmanager.yml') }}"
+
+  run_once: yes
+  when: "ansible_hostname == groups['kube-master'][0]"

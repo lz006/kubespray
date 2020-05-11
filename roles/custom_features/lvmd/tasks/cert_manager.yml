@@ -1,0 +1,14 @@
+---
+- block:
+    - name: Create cert manager manifests (Originated from https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.yaml)
+      k8s:
+        state: present
+        definition: "{{ lookup('template', '../templates/k8s/certmanager/certmanager.yml') }}"
+
+    - name: sleep for 10 seconds and continue with play
+      wait_for:
+        timeout: 10
+      delegate_to: localhost
+      become: false
+  run_once: yes
+  when: "ansible_hostname == groups['kube-master'][0]"

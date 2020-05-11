@@ -3,9 +3,25 @@
 
 lvmd_version: 0.4.7
 
-lvmd_cert_manager_exists: true
-## Api version will be detected if not specified
-#lvmd_cert_manager_apiVersion: certmanager.k8s.io/v1alpha1
+## Uninstall lvmd:
+## Set 'true' if you want topolvm to be unistalled
+## Note this will work only if there are no lvmd based
+## PersistentVolumeClaims present anymore. Furthermore
+## this won't touch VG, LV or data at OS level.
+#lvmd_uninstall: false
+
+## Cert Manager:
+## Specify if cert manager shall be used (default)
+lvmd_cert_manager_usage: true
+## Specify if install/unistall cert managser shall be
+## managed via this role. (Actually this is a feature
+## provided in official 'kubespray 2.13.0' but was broken 
+## at the time of writing this role)
+## Caution! Cert Manager may only deployed once per cluster!
+lvmd_cert_manager_manage: true
+
+## Api version of certmanager
+lvmd_cert_manager_apiVersion: cert-manager.io/v1alpha3
 
 
 ## Prefix is needed in future releases (0.5+) to enable multiple
@@ -13,6 +29,7 @@ lvmd_cert_manager_exists: true
 #lvmd_vg_prefix: lvmd_
 
 ## Volume groups with their underlying pvs to be created
+## OPTIONAL
 lvmd_volume_groups:
   lvmd_hdd:
     pvs:
@@ -34,6 +51,7 @@ lvmd_k8s_manifests:
     - controller
     - node
     - storageclass
+    - priorityclass
   no_cert_manager:
     - namespace
     - crd
@@ -45,4 +63,5 @@ lvmd_k8s_manifests:
     - controller
     - node
     - storageclass
+    - priorityclass
 

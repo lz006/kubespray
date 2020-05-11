@@ -1,0 +1,51 @@
+---
+- block:
+  - name: Create verify manifests
+    k8s:
+      state: present
+      namespace: default
+      definition: "{{ lookup('template', '../templates/k8s/verification/pvc.yml') }}"
+
+  - name: sleep for 5 seconds and continue with play
+    wait_for:
+      timeout: 5
+    delegate_to: localhost
+    become: false
+
+  - name: Get an existing Service object
+    k8s_info:
+      api_version: v1
+      kind: Pod
+      name: topolvm-verification
+      namespace: default
+    register: lvmd_verification
+    until: "lvmd_verification.resources[0].status.phase | default('') == 'Running'"
+    retries: 10
+    delay: 5
+    #ignore_errors: yes
+
+  - debug:
+      var: lvmd_verification
+ 
+  - name: Delete verify manifests
+    k8s:
+      state: absent
+      kind: Pod
+      name: topolvm-verification
+      namespace: default
+
+  - name: Delete verify manifests
+    k8s:
+      state: absent
+      kind: PersistentVolumeClaim
+      name: topolvm-pvc
+      namespace: default
+  
+
+  - fail:
+      msg: lvmd verification failed, needs further investigation
+    when: lvmd_verification is failed
+
+
+  run_once: yes
+  when: "ansible_hostname == groups['kube-master'][0]"

@@ -15,8 +15,8 @@ ansible_user: myuser
 
 ## Uncomment this if running specifc tags only 
 ## Bug: https://github.com/kubernetes-sigs/kubespray/issues/5891
-proxy_env: ''
-environment: ''
+#proxy_env: ''
+#environment: ''
 
 # Optional but overwrites existing conf
 # timeservers:
