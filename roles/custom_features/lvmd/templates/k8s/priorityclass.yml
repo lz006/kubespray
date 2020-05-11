@@ -1,0 +1,7 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: topolvm
+value: 1000000
+globalDefault: false
+description: "Pods using TopoLVM volumes should use this class."

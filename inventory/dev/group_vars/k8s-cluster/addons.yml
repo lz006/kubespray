@@ -1,7 +1,7 @@
 ---
 # Kubernetes dashboard
 # RBAC required. see docs/getting-started.md for access details.
-dashboard_enabled: true
+dashboard_enabled: false
 
 # Helm deployment
 helm_enabled: false
@@ -112,5 +112,5 @@ ingress_alb_enabled: false
 # alb_ingress_aws_debug: "false"
 
 # Cert manager deployment
-cert_manager_enabled: true
-cert_manager_namespace: "cert-manager"
+cert_manager_enabled: false
+# cert_manager_namespace: "cert-manager"

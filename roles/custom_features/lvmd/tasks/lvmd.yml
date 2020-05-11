@@ -1,14 +1,11 @@
 ---
 # tasks file for lvmd
-- debug:
-    msg: "{{ item.key | lower }}  {{ item.value.pvs | join(',') }}"
-  with_dict: "{{ lvmd_volume_groups }}"
-
 - name: Create a volume groups for lvmd
   lvg: 
     vg: "{{ item.key | lower }}"
     pvs: "{{ item.value.pvs | join(',') }}"
   with_dict: "{{ lvmd_volume_groups }}"
+  when: lvmd_volume_groups is defined
 
 - name: check if lvmd is already present
   stat:

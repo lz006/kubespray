@@ -1,0 +1,76 @@
+---
+- block:
+    - name: remove labels from namespaces
+      shell: "kubectl label ns {{ item.ns }} {{ item.label }}-"
+      loop:
+        - { ns: "kube-system", label: "topolvm.cybozu.com/webhook"}
+        - { ns: "cert-manager", label: "topolvm.cybozu.com/webhook"}
+      ignore_errors: yes
+
+    - name: get cert manager api version
+      shell: "kubectl api-versions | grep -i certmanager.k8s.io/"
+      register: lvmd_cert_manager_apiVersion_detected
+      when:
+        - not (lvmd_cert_manager_apiVersion is defined)
+        - lvmd_cert_manager_usage == true
+
+    - set_fact:
+        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion_detected.stdout }}"
+      when:
+        - not (lvmd_cert_manager_apiVersion is defined)
+        - lvmd_cert_manager_usage == true
+
+    - set_fact:
+        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion }}"
+      when:
+        - lvmd_cert_manager_apiVersion is defined
+        - lvmd_cert_manager_usage == true
+
+    - name: Delete lvmd manifests (depending on pre-existing cert-manager)
+      k8s:
+        state: absent
+        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
+      loop: "{{ lvmd_k8s_manifests.default | reverse | list }}"
+      when: lvmd_cert_manager_usage == true
+
+    - name: Delete lvmd manifests (without need of cert-manager)
+      k8s:
+        state: absent
+        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
+      loop: "{{ lvmd_k8s_manifests.no_cert_manager | reverse | list }}"
+      when: lvmd_cert_manager_usage == false  
+
+  run_once: yes
+  when: "ansible_hostname == groups['kube-master'][0]"
+
+- block:
+  - name: Remove topolvm specific content from kubeadm config
+    lineinfile:
+      state: absent
+      path: /etc/kubernetes/kubeadm-config.yaml
+      line: "{{ item }}"
+    loop: 
+      - "    config: \"/var/lib/scheduler/scheduler-config.yaml\""
+      #- "  extraVolumes:"
+      - "  - name: config"
+      - "    hostPath: /etc/topolvm/scheduler-config"
+      - "    mountPath: /var/lib/scheduler"
+      - "    readOnly: True"
+
+  - name: get kube version
+    shell: "/usr/local/bin/kubeadm version | sed 's/.*GitVersion:\"//g' | sed 's/\".*//g'"
+    register: lvmd_kube_version
+    when: "'kube-master' in group_names"
+
+  - name: reload cluster config
+    shell: "yes y | /usr/local/bin/kubeadm upgrade apply {{ lvmd_kube_version.stdout }} --config /etc/kubernetes/kubeadm-config.yaml && sleep 5"
+    delegate_to: "{{ item }}"
+    loop: "{{ groups['kube-master'] }}"
+    when: "'kube-master' in group_names"
+
+  - name: delete scheduler config dir
+    file:
+      state: absent
+      path: /etc/topolvm
+      
+  when: "'kube-master' in group_names"

@@ -100,3 +100,5 @@ target/
 # virtualenv
 venv/
 ENV/
+
+addhoc_test.yml

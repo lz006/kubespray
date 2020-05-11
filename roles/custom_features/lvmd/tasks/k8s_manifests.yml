@@ -1,63 +1,81 @@
 ---
-- name: install pip
-  package:
-    name: 
-      - python3-pip
-      - python-pip
-    update_cache: yes
-  environment: "{{ environment_variables | default({}) }}"
+- block:
+  - name: set se context to dir
+    sefcontext:
+      target: "{{ item }}"
+      setype: svirt_sandbox_file_t
+      state: present
+    with_items:
+      - "/etc/topolvm(/.*)?"
+    when: ansible_os_family == "RedHat"
+
+  - name: ensure scheduler config dir is present
+    file:
+      state: directory
+      path: /etc/topolvm/scheduler-config
+      mode: 0775
+
+  - name: set scheduler config
+    template:
+      src: "k8s/{{ item }}"
+      dest: "/etc/topolvm/scheduler-config/{{ item }}"
+      mode: 0644
+    loop:
+      - scheduler-config.yaml
+      - scheduler-policy.cfg
+
   when: "'kube-master' in group_names"
 
-- name: install python reqs for openshift lib
-  pip:
-    name: 
-      - setuptools>=44.1.0
-      - wheel
-    executable: pip2.7
-  environment: "{{ environment_variables | default({}) }}"
-
-- name: install python openshift lib
-  pip:
-    name: openshift
-    executable: pip2.7
-  environment: "{{ environment_variables | default({}) }}"
 
 - block:
-    - name: protect system namespace for being mutated through topolvm
+    - name: protect kube-system namespace for being mutated through topolvm
       shell: kubectl label --overwrite=true ns kube-system topolvm.cybozu.com/webhook=ignore
 
-    - name: get cert manager api version
-      shell: "kubectl api-versions | grep -i certmanager.k8s.io/"
-      register: lvmd_cert_manager_apiVersion_detected
-      when:
-        - not (lvmd_cert_manager_apiVersion is defined)
-        - lvmd_cert_manager_exists == true
+    - shell: "kubectl get ns | awk 'NR>1 {print $1}'"
+      register: lvmd_ns
 
-    - set_fact:
-        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion_detected.stdout }}"
-      when:
-        - not (lvmd_cert_manager_apiVersion is defined)
-        - lvmd_cert_manager_exists == true
+    - name: protect cert-manager namespace (if present) for being mutated through topolvm
+      shell: "kubectl label --overwrite=true ns cert-manager topolvm.cybozu.com/webhook=ignore"
+      when: "'cert-manager' in lvmd_ns.stdout_lines"
 
     - set_fact:
         lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion }}"
       when:
         - lvmd_cert_manager_apiVersion is defined
-        - lvmd_cert_manager_exists == true
+        - lvmd_cert_manager_usage == true
 
     - name: Create lvmd manifests (depending on pre-existing cert-manager)
       k8s:
         state: present
         definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
       loop: "{{ lvmd_k8s_manifests.default }}"
-      when: lvmd_cert_manager_exists == true
+      loop_control:
+        pause: 5
+      when: lvmd_cert_manager_usage == true
 
     - name: Create lvmd manifests (without need of cert-manager)
       k8s:
         state: present
         definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
       loop: "{{ lvmd_k8s_manifests.no_cert_manager }}"
-      when: lvmd_cert_manager_exists == false
+      loop_control:
+        pause: 5
+      when: lvmd_cert_manager_usage == false
 
   run_once: yes
+  when: "ansible_hostname == groups['kube-master'][0]"
+
+- name: lvmd | build kubeadm config for lvmd rollout
+  shell: mv /etc/kubernetes/kubeadm-config-topolvm.yaml /etc/kubernetes/kubeadm-config.yaml
+  when: "'kube-master' in group_names"
+
+- name: get kube version
+  shell: "/usr/local/bin/kubeadm version | sed 's/.*GitVersion:\"//g' | sed 's/\".*//g'"
+  register: lvmd_kube_version
+  when: "'kube-master' in group_names"
+
+- name: reload cluster config
+  shell: "yes y | /usr/local/bin/kubeadm upgrade apply {{ lvmd_kube_version.stdout }} --config /etc/kubernetes/kubeadm-config.yaml && sleep 5"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['kube-master'] }}"
   when: "'kube-master' in group_names"

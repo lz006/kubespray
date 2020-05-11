@@ -1,16 +1,75 @@
 galaxy_info:
   author: Lucas Zanella
   description: |
-    This roles is intened to automate rollout and update topolvm (https://github.com/cybozu-go/topolvm) on a existing k8s cluster.
+    This roles is intended to automate lifecycle of topolvm (https://github.com/cybozu-go/topolvm) on a existing k8s cluster.
     
     Requirements:
-      - cert manager must be enabled
-      - clean block devices or partitions available to be used as "pv" for volume group creation
+      - cert manager must be available
+        - Will be installed by this role if using default vars
+      - Clean volume groups
+        - May be created by this rule if var "lvmd_volume_groups" is specified
+
+    Deployment:
+
+      ## Specify volume group to use
+      ## var scope -> host_group/host/role
+      lvmd_vg: lvmd_hdd
+
+      ## Provide exact these two vars as they are stated
+      ## for scheduler
+      ## var scope -> host group 'k8s-master'
+      ## Reason: This prevents kubeadm config to be overridden
+      ## wrongly if kubespray is rerun
+      ## Modified files of kubespray:
+      ## extra_playbooks/roles/kubernetes/master/templates/kubeadm-config.v1beta1.yaml.j2
+      ## extra_playbooks/roles/kubernetes/master/templates/kubeadm-config.v1beta2.yaml.j2
+      ## extra_playbooks/roles/kubernetes/master/tasks/kubeadm-version.yml
+      lvmd_kube_kubeadm_scheduler_extra_args:
+        config: /var/lib/scheduler/scheduler-config.yaml
+      
+      lvmd_scheduler_extra_volumes:
+       - name: "config"
+         hostPath: /etc/topolvm/scheduler-config
+         mountPath: /var/lib/scheduler
+         readOnly: true
+
+
+    Usage:
+      ---
+      apiVersion: v1
+      kind: Pod
+      metadata:
+        name: test
+      spec:
+        priorityClassName: topolvm
+        containers:
+        - name: test
+          image: nginx
+          volumeMounts:
+          - mountPath: /test1
+            name: my-volume
+        volumes:
+          - name: my-volume
+            persistentVolumeClaim:
+              claimName: topolvm-pvc
+      ---
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: topolvm-pvc
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 8Gi
+        storageClassName: topolvm-hdd
 
     TODO:
       - Possibility to run deployment without cert-manager
 
-  company: your company (optional)
+  company: Sulzer GmbH
 
   license: Apache-2.0
 

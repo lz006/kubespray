@@ -1,0 +1,26 @@
+---
+- block:
+    - name: install pip
+      package:
+        name: 
+          - python3-pip
+          - python-pip
+        update_cache: yes
+      environment: "{{ environment_variables | default({}) }}"
+
+    - name: install python reqs for openshift lib
+      pip:
+        name: 
+          - setuptools>=44.1.0
+          - wheel
+        executable: pip2.7
+      environment: "{{ environment_variables | default({}) }}"
+
+    - name: install python openshift lib
+      pip:
+        name: openshift
+        executable: pip2.7
+      environment: "{{ environment_variables | default({}) }}"
+      
+  run_once: yes
+  when: "ansible_hostname == groups['kube-master'][0]"

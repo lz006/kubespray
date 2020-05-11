@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: topolvm-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 8Gi
+  storageClassName: topolvm-hdd
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: topolvm-verification
+spec:
+  priorityClassName: topolvm
+  containers:
+  - name: test
+    image: nginx
+    volumeMounts:
+    - mountPath: /test1
+      name: my-volume
+  volumes:
+    - name: my-volume
+      persistentVolumeClaim:
+        claimName: topolvm-pvc
