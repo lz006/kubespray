@@ -1,5 +1,8 @@
 ---
 - block:
+    - name: set python interpreter
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python3
     - name: Create cert manager manifests (Originated from https://github.com/jetstack/cert-manager/releases/download/v0.15.0/cert-manager.yaml)
       k8s:
         state: present
@@ -10,5 +13,9 @@
         timeout: 10
       delegate_to: localhost
       become: false
+  always:
+    - name: reset python interpreter
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python
   run_once: yes
   when: "ansible_hostname == groups['kube-master'][0]"

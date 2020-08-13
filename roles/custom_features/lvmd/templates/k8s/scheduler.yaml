@@ -50,16 +50,18 @@ spec:
       serviceAccountName: topolvm-scheduler
       containers:
         - name: topolvm-scheduler
-          image: quay.io/cybozu/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
           command:
             - /topolvm-scheduler
-            - --listen=localhost:9251
-            - --divisor=1
+            - --config=/etc/topolvm/scheduler-options.yaml
           livenessProbe:
             httpGet:
               host: localhost
               port: 9251
               path: /status
+          volumeMounts:
+            - mountPath: /etc/topolvm
+              name: scheduler-options
       hostNetwork: true
       tolerations:
         - key: CriticalAddonsOnly
@@ -73,3 +75,7 @@ spec:
               - matchExpressions:
                   - key: node-role.kubernetes.io/master
                     operator: Exists
+      volumes:
+        - name: scheduler-options
+          configMap:
+            name: scheduler-options
