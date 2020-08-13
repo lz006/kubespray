@@ -1,7 +1,7 @@
 ---
 # defaults file for lvmd
 
-lvmd_version: 0.4.7
+lvmd_version: 0.5.2
 
 ## Uninstall lvmd:
 ## Set 'true' if you want topolvm to be unistalled
@@ -26,26 +26,29 @@ lvmd_cert_manager_apiVersion: cert-manager.io/v1alpha3
 
 ## Prefix is needed in future releases (0.5+) to enable multiple
 ## storageclasses based on volume groups -> vg_X = storageclass_X 
-#lvmd_vg_prefix: lvmd_
+lvmd_vg_prefix: lvmd_
 
 ## Volume groups with their underlying pvs to be created
 ## OPTIONAL
 lvmd_volume_groups:
-  lvmd_hdd:
+  ssd-vg:
     pvs:
-      - /dev/sdc
+      - /dev/sdb
 
 ## Volumegroup to be managed by lvmd
 ## Necessary if lvmd_version<0.5.0
-lvmd_vg: lvmd_hdd
+#lvmd_vg: lvmd_hdd
 
 
 lvmd_k8s_manifests:
   default:
     - namespace
+    #- kustomization
     - crd
+    - crd_restore
     - psp
     - certificates
+    - scheduler-options
     - scheduler
     - mutatingwebhooks
     - controller
@@ -54,10 +57,13 @@ lvmd_k8s_manifests:
     - priorityclass
   no_cert_manager:
     - namespace
+    #- kustomization
     - crd
+    - crd_restore
     - psp
     ## TODO: "Prepare the certificate without cert-manager" -> https://github.com/cybozu-go/topolvm/tree/master/deploy
     #- certificates
+    - scheduler-options
     - scheduler
     - mutatingwebhooks
     - controller

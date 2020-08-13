@@ -1,0 +1,9 @@
+apiVersion: v1
+data:
+  scheduler-options.yaml: |
+    listen: "localhost:9251"
+    default-divisor: 1
+kind: ConfigMap
+metadata:
+  name: scheduler-options
+  namespace: topolvm-system

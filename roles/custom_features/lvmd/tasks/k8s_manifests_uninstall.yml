@@ -25,21 +25,26 @@
       when:
         - lvmd_cert_manager_apiVersion is defined
         - lvmd_cert_manager_usage == true
-
+    - name: set python interpreter
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python3
     - name: Delete lvmd manifests (depending on pre-existing cert-manager)
       k8s:
         state: absent
-        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
+        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yaml') }}"
       loop: "{{ lvmd_k8s_manifests.default | reverse | list }}"
       when: lvmd_cert_manager_usage == true
 
     - name: Delete lvmd manifests (without need of cert-manager)
       k8s:
         state: absent
-        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yml') }}"
+        definition: "{{ lookup('template', '../templates/k8s/' + item + '.yaml') }}"
       loop: "{{ lvmd_k8s_manifests.no_cert_manager | reverse | list }}"
       when: lvmd_cert_manager_usage == false  
-
+  always:
+    - name: reset python interpreter
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python
   run_once: yes
   when: "ansible_hostname == groups['kube-master'][0]"
 

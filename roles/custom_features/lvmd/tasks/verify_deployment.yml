@@ -1,5 +1,8 @@
 ---
 - block:
+  - name: set python interpreter
+    set_fact:
+      ansible_python_interpreter: /usr/bin/python3
   - name: Create verify manifests
     k8s:
       state: present
@@ -46,6 +49,8 @@
       msg: lvmd verification failed, needs further investigation
     when: lvmd_verification is failed
 
-
-  run_once: yes
+  always:
+    - name: reset python interpreter
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python
   when: "ansible_hostname == groups['kube-master'][0]"

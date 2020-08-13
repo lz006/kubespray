@@ -307,7 +307,8 @@ spec:
       serviceAccountName: controller
       containers:
         - name: topolvm-controller
-          image: quay.io/cybozu/topolvm:{{ lvmd_version }}
+          #image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: core.harbor.hub.sulzer.de:8787/iac/topolvm:0.1.4
           command:
             - /topolvm-controller
             - --cert-dir=/certs
@@ -335,12 +336,13 @@ spec:
               mountPath: /certs
 
         - name: csi-provisioner
-          image: quay.io/cybozu/topolvm:{{ lvmd_version }}
+          #image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: core.harbor.hub.sulzer.de:8787/iac/topolvm:0.1.4
           command:
             - /csi-provisioner
             - "--csi-address=/run/topolvm/csi-topolvm.sock"
-            - "--feature-gates=Topology=true"
-            - --enable-leader-election
+            - "--feature-gates=Topology=true,AnyVolumeDataSource=true"
+            - --leader-election
             - --leader-election-namespace=topolvm-system
             - --leader-election-type=leases
           volumeMounts:
@@ -348,7 +350,7 @@ spec:
               mountPath: /run/topolvm
 
         - name: csi-attacher
-          image: quay.io/cybozu/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
           command:
             - /csi-attacher
             - "--csi-address=/run/topolvm/csi-topolvm.sock"
@@ -359,7 +361,7 @@ spec:
               mountPath: /run/topolvm
 
         - name: csi-resizer
-          image: quay.io/cybozu/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
           command:
             - /csi-resizer
             - "--csi-address=/run/topolvm/csi-topolvm.sock"
@@ -370,7 +372,7 @@ spec:
               mountPath: /run/topolvm
 
         - name: liveness-probe
-          image: quay.io/cybozu/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
           command:
             - /livenessprobe
             - "--csi-address=/run/topolvm/csi-topolvm.sock"

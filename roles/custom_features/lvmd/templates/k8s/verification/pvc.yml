@@ -8,8 +8,8 @@ spec:
   volumeMode: Filesystem
   resources:
     requests:
-      storage: 8Gi
-  storageClassName: topolvm-hdd
+      storage: 1Gi
+  storageClassName: topolvm-provisioner
 ---
 apiVersion: v1
 kind: Pod

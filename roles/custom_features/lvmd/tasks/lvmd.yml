@@ -51,6 +51,18 @@
     dest: /usr/lib/systemd/system/lvmd.service
   register: lvmd_unit_file
 
+- name: ensure dir is present
+  file:
+    state: directory
+    path: /etc/topolvm
+
+- name: Place lvmd config file
+  template:
+    src: lvmd.yaml
+    dest: /etc/topolvm/lvmd.yaml
+    mode: 0644
+  register: lvmd_conf_file
+
 - name: Enable and start lvmd service
   systemd:
     name: lvmd
@@ -64,4 +76,4 @@
     enabled: yes
     state: restarted
     daemon_reload: yes
-  when: lvmd_unit_file.changed
+  when: lvmd_unit_file.changed or lvmd_conf_file.changed

@@ -1,9 +1,15 @@
 ---
 - block:
+    - name: set python interpreter
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python3
     - name: Delete cert manager manifests
       k8s:
         state: absent
         definition: "{{ lookup('template', '../templates/k8s/certmanager/certmanager.yml') }}"
-
+  always:
+    - name: reset python interpreter
+      set_fact:
+        ansible_python_interpreter: /usr/bin/python
   run_once: yes
   when: "ansible_hostname == groups['kube-master'][0]"
