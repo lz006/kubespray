@@ -25,14 +25,37 @@
   register: lvmd_topolvm_in_found
   when: lvmd_kubeadm_config.stat.exists
 
+- fail:
+    msg: "var \"lvmd_kube_kubeadm_scheduler_extra_args\" not defined"
+  when: 
+    - groups['lvmd'] is defined
+    - not (lvmd_kube_kubeadm_scheduler_extra_args is defined)
+
+- fail:
+    msg: "var \"lvmd_scheduler_extra_volumes\" not defined"
+  when: 
+    - groups['lvmd'] is defined
+    - not (lvmd_scheduler_extra_volumes is defined)
+
+- debug:
+    msg: "{{ item }}"
+  loop:
+    - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
+    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
+
 - name: lvmd | build_topolvm_facts
   set_fact:
     kube_kubeadm_scheduler_extra_args_fact: "{{ lvmd_kube_kubeadm_scheduler_extra_args }}"
     scheduler_extra_volumes_fact: "{{ lvmd_scheduler_extra_volumes }}"
   when: 
+    - lvmd_kubeadm_config.stat.exists
     - lvmd_topolvm_in_found.stdout | default('') != '0'
-    - lvmd_kube_kubeadm_scheduler_extra_args is defined
-    - lvmd_scheduler_extra_volumes is defined
+
+- debug:
+    msg: "{{ item }}"
+  loop:
+    - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
+    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
 
 #############################################
 ###### Sulzer Stop ##########################
@@ -61,6 +84,12 @@
     src: "kubeadm-config.{{ kubeadmConfig_api_version }}.yaml.j2"
     dest: "{{ kube_config_dir }}/kubeadm-config-topolvm.yaml"
     mode: 0640
+
+# - name: lvmd | unset build_topolvm_facts
+#   set_fact:
+#     kube_kubeadm_scheduler_extra_args_fact:
+#     scheduler_extra_volumes_fact:
+
 #############################################
 ###### Sulzer Stop ##########################
 #############################################
