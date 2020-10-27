@@ -61,6 +61,59 @@
 ###### Sulzer Stop ##########################
 #############################################
 
+#############################################
+###### Sulzer Start #########################
+#############################################
+## It's important to not set topolvm (lvmd) config when 
+## initial rollout happens, otherwise kube-scheduler would 
+## fail because of missing topolvm dependencies that would 
+## come with role 'lvmd'
+- name: lvmd | check if kubeadm-config.yaml is there
+  stat:
+    path: /etc/kubernetes/kubeadm-config.yaml
+  register: lvmd_kubeadm_config
+
+- name: lvmd | check if there is already topolvm deployed
+  shell: "grep -i .*topolvm.* /etc/kubernetes/kubeadm-config.yaml | wc -l"
+  register: lvmd_topolvm_in_found
+  when: lvmd_kubeadm_config.stat.exists
+
+- fail:
+    msg: "var \"lvmd_kube_kubeadm_scheduler_extra_args\" not defined"
+  when: 
+    - groups['lvmd'] is defined
+    - not (lvmd_kube_kubeadm_scheduler_extra_args is defined)
+
+- fail:
+    msg: "var \"lvmd_scheduler_extra_volumes\" not defined"
+  when: 
+    - groups['lvmd'] is defined
+    - not (lvmd_scheduler_extra_volumes is defined)
+
+- debug:
+    msg: "{{ item }}"
+  loop:
+    - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
+    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
+
+- name: lvmd | build_topolvm_facts
+  set_fact:
+    kube_kubeadm_scheduler_extra_args_fact: "{{ lvmd_kube_kubeadm_scheduler_extra_args }}"
+    scheduler_extra_volumes_fact: "{{ lvmd_scheduler_extra_volumes }}"
+  when: 
+    - lvmd_kubeadm_config.stat.exists
+    - lvmd_topolvm_in_found.stdout | default('') != '0'
+
+- debug:
+    msg: "{{ item }}"
+  loop:
+    - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
+    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
+
+#############################################
+###### Sulzer Stop ##########################
+#############################################
+
 - name: kubeadm | Create kubeadm config
   template:
     src: "kubeadm-config.{{ kubeadmConfig_api_version }}.yaml.j2"
