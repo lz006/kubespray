@@ -6,7 +6,6 @@
 - hosts: all
   become: yes
   any_errors_fatal: yes
-  tasks:
   roles:
     - custom_features/host_preperations
   tags:

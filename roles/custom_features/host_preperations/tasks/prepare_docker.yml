@@ -1,0 +1,17 @@
+- block:
+  - name: ensure dir is present
+    file:
+      path: /lib/systemd/system/docker.service.d
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+
+  - name: Template docker systemd environment file
+    template:
+      src: http-proxy.conf.j2
+      dest: /lib/systemd/system/docker.service.d/http-proxy.conf
+      owner: root
+      group: root
+      mode: 0644
+  when: docker_setup.daemon.environment is defined
