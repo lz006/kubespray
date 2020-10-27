@@ -53,7 +53,7 @@ k8s_internal_interface_wifi: false
   
 kernel:
   version:
-    redhat: kernel-ml-5.6.10-1.el7.elrepo.x86_64
+    redhat: kernel-ml-5.8.0-1.el7.elrepo.x86_64
     debian: linux-image-unsigned-5.3.0-46-generic
 
 
