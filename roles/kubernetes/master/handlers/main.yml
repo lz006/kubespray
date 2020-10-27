@@ -93,8 +93,7 @@
 
 - name: Master | wait for kube-scheduler
   uri:
-    url: https://localhost:10259/healthz
-    validate_certs: no
+    url: http://localhost:10251/healthz
   register: scheduler_result
   until: scheduler_result.status == 200
   retries: 60
@@ -102,8 +101,7 @@
 
 - name: Master | wait for kube-controller-manager
   uri:
-    url: https://localhost:10257/healthz
-    validate_certs: no
+    url: http://localhost:10252/healthz
   register: controller_manager_result
   until: controller_manager_result.status == 200
   retries: 60
