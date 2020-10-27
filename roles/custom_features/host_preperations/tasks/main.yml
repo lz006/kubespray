@@ -15,3 +15,5 @@
   
 - include: 'lvm_docker.yml'
   when: "'docker-container-lvm' in group_names"
+
+- include: 'prepare_docker.yml'

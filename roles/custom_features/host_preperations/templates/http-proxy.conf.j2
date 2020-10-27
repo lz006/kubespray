@@ -1,0 +1,6 @@
+[Service]
+{% if docker_setup.daemon.environment is defined %}
+{% for key, value in docker_setup.daemon.environment.items() %}
+Environment="{{key}}={{value}}"
+{% endfor %}
+{% endif %}
