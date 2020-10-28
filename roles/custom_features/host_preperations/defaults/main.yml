@@ -14,6 +14,7 @@ misc:
       - net-tools
       - vim
 
+manage_kernel: true
 manage_firewall: false
 firewall:
   ports:

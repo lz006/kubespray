@@ -8,6 +8,7 @@
   when: manage_firewall == true
 
 - include: 'kernel_update.yml'
+  when: manage_kernel == true
 - include: 'kernel_tweaks.yml'
 
 - include: 'chrony_setup.yml'
