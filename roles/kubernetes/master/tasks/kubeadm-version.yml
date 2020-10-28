@@ -18,44 +18,44 @@
 - name: lvmd | check if kubeadm-config.yaml is there
   stat:
     path: /etc/kubernetes/kubeadm-config.yaml
-  register: lvmd_kubeadm_config
+  register: topolvm_kubeadm_config
 
 - name: lvmd | check if there is already topolvm deployed
   shell: "grep -i .*topolvm.* /etc/kubernetes/kubeadm-config.yaml | wc -l"
-  register: lvmd_topolvm_in_found
-  when: lvmd_kubeadm_config.stat.exists
+  register: topolvm_topolvm_in_found
+  when: topolvm_kubeadm_config.stat.exists
 
 - fail:
-    msg: "var \"lvmd_kube_kubeadm_scheduler_extra_args\" not defined"
+    msg: "var \"topolvm_kube_kubeadm_scheduler_extra_args\" not defined"
   when: 
     - groups['lvmd'] is defined
-    - not (lvmd_kube_kubeadm_scheduler_extra_args is defined)
+    - not (topolvm_kube_kubeadm_scheduler_extra_args is defined)
 
 - fail:
-    msg: "var \"lvmd_scheduler_extra_volumes\" not defined"
+    msg: "var \"topolvm_scheduler_extra_volumes\" not defined"
   when: 
     - groups['lvmd'] is defined
-    - not (lvmd_scheduler_extra_volumes is defined)
+    - not (topolvm_scheduler_extra_volumes is defined)
 
 - debug:
     msg: "{{ item }}"
   loop:
     - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
-    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
+    - "{{ topolvm_topolvm_in_found.stdout | default('') }}"
 
 - name: lvmd | build_topolvm_facts
   set_fact:
-    kube_kubeadm_scheduler_extra_args_fact: "{{ lvmd_kube_kubeadm_scheduler_extra_args }}"
-    scheduler_extra_volumes_fact: "{{ lvmd_scheduler_extra_volumes }}"
+    kube_kubeadm_scheduler_extra_args_fact: "{{ topolvm_kube_kubeadm_scheduler_extra_args }}"
+    scheduler_extra_volumes_fact: "{{ topolvm_scheduler_extra_volumes }}"
   when: 
-    - lvmd_kubeadm_config.stat.exists
-    - lvmd_topolvm_in_found.stdout | default('') != '0'
+    - topolvm_kubeadm_config.stat.exists
+    - topolvm_topolvm_in_found.stdout | default('') != '0'
 
 - debug:
     msg: "{{ item }}"
   loop:
     - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
-    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
+    - "{{ topolvm_topolvm_in_found.stdout | default('') }}"
 
 #############################################
 ###### Sulzer Stop ##########################
@@ -71,44 +71,44 @@
 - name: lvmd | check if kubeadm-config.yaml is there
   stat:
     path: /etc/kubernetes/kubeadm-config.yaml
-  register: lvmd_kubeadm_config
+  register: topolvm_kubeadm_config
 
 - name: lvmd | check if there is already topolvm deployed
   shell: "grep -i .*topolvm.* /etc/kubernetes/kubeadm-config.yaml | wc -l"
-  register: lvmd_topolvm_in_found
-  when: lvmd_kubeadm_config.stat.exists
+  register: topolvm_topolvm_in_found
+  when: topolvm_kubeadm_config.stat.exists
 
 - fail:
-    msg: "var \"lvmd_kube_kubeadm_scheduler_extra_args\" not defined"
+    msg: "var \"topolvm_kube_kubeadm_scheduler_extra_args\" not defined"
   when: 
     - groups['lvmd'] is defined
-    - not (lvmd_kube_kubeadm_scheduler_extra_args is defined)
+    - not (topolvm_kube_kubeadm_scheduler_extra_args is defined)
 
 - fail:
-    msg: "var \"lvmd_scheduler_extra_volumes\" not defined"
+    msg: "var \"topolvm_scheduler_extra_volumes\" not defined"
   when: 
     - groups['lvmd'] is defined
-    - not (lvmd_scheduler_extra_volumes is defined)
+    - not (topolvm_scheduler_extra_volumes is defined)
 
 - debug:
     msg: "{{ item }}"
   loop:
     - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
-    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
+    - "{{ topolvm_topolvm_in_found.stdout | default('') }}"
 
 - name: lvmd | build_topolvm_facts
   set_fact:
-    kube_kubeadm_scheduler_extra_args_fact: "{{ lvmd_kube_kubeadm_scheduler_extra_args }}"
-    scheduler_extra_volumes_fact: "{{ lvmd_scheduler_extra_volumes }}"
+    kube_kubeadm_scheduler_extra_args_fact: "{{ topolvm_kube_kubeadm_scheduler_extra_args }}"
+    scheduler_extra_volumes_fact: "{{ topolvm_scheduler_extra_volumes }}"
   when: 
-    - lvmd_kubeadm_config.stat.exists
-    - lvmd_topolvm_in_found.stdout | default('') != '0'
+    - topolvm_kubeadm_config.stat.exists
+    - topolvm_topolvm_in_found.stdout | default('') != '0'
 
 - debug:
     msg: "{{ item }}"
   loop:
     - "{{ kube_kubeadm_scheduler_extra_args_fact | default('') }}"
-    - "{{ lvmd_topolvm_in_found.stdout | default('') }}"
+    - "{{ topolvm_topolvm_in_found.stdout | default('') }}"
 
 #############################################
 ###### Sulzer Stop ##########################
@@ -126,11 +126,11 @@
 
 - name: lvmd | build_topolvm_facts
   set_fact:
-    kube_kubeadm_scheduler_extra_args_fact: "{{ lvmd_kube_kubeadm_scheduler_extra_args }}"
-    scheduler_extra_volumes_fact: "{{ lvmd_scheduler_extra_volumes }}"
+    kube_kubeadm_scheduler_extra_args_fact: "{{ topolvm_kube_kubeadm_scheduler_extra_args }}"
+    scheduler_extra_volumes_fact: "{{ topolvm_scheduler_extra_volumes }}"
   when: 
-    - lvmd_kube_kubeadm_scheduler_extra_args is defined
-    - lvmd_scheduler_extra_volumes is defined
+    - topolvm_kube_kubeadm_scheduler_extra_args is defined
+    - topolvm_scheduler_extra_volumes is defined
 
 - name: lvmd | build kubeadm config for lvmd rollout
   template:

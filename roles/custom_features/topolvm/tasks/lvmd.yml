@@ -4,64 +4,83 @@
   lvg: 
     vg: "{{ item.key | lower }}"
     pvs: "{{ item.value.pvs | join(',') }}"
-  with_dict: "{{ lvmd_volume_groups }}"
-  when: lvmd_volume_groups is defined
+  with_dict: "{{ topolvm_volume_groups }}"
+  when: topolvm_volume_groups is defined
 
 - name: check if lvmd is already present
   stat:
     path: /usr/local/bin/lvmd
-  register: lvmd_binary
+  register: topolvm_binary
 
 - name: get installed version of
   shell: /usr/local/bin/lvmd --version | awk '{print $3}'
-  register: lvmd_installed_version
-  when: lvmd_binary.stat.exists
+  register: topolvm_installed_version
+  when: topolvm_binary.stat.exists
 
 - name: take lvmd service down and delete binary
   block:
     - shell: /usr/bin/systemctl list-units lvmd.service
-      register: lvmd_service_stat
+      register: topolvm_service_stat
       #ignore_errors: yes
 
     - systemd:
         name: lvmd.service
         state: stopped
-      when: lvmd_service_stat is succeeded
+      when: topolvm_service_stat is succeeded
 
     - file:
         path: /usr/local/bin/lvmd
         state: absent
   when: 
-    - lvmd_binary.stat.exists
-    - lvmd_installed_version.stdout != lvmd_version
+    - topolvm_binary.stat.exists
+    - topolvm_installed_version.stdout != topolvm_version
+
+- name: build combined version
+  set_fact:
+    topolvm_br_full_version: "{{ topolvm_version }}{{ topolvm_backup_restore_revision }}"
+
+- debug:
+    var: topolvm_installed_version.stdout
+
+- debug:
+    var: topolvm_br_full_version
 
 - name: download and unarchive lvmd
   unarchive:
-    src: "https://github.com/cybozu-go/topolvm/releases/download/v{{ lvmd_version }}/lvmd-{{ lvmd_version }}.tar.gz"
+    src: "{{ topolvm_github_repo }}/releases/download/v{{ topolvm_version }}/lvmd-{{ topolvm_br_full_version }}.tar.gz"
     dest: /usr/local/bin
     remote_src: yes
   environment: "{{ environment_variables | default({}) }}"
   when: 
-    - lvmd_installed_version is defined
-    - lvmd_installed_version.stdout | default('') != lvmd_version
+    - topolvm_installed_version is defined
+    - topolvm_installed_version.stdout | default('') != topolvm_br_full_version
 
 - name: Place systemd unit file
   template:
     src: lvmd.service.j2
     dest: /usr/lib/systemd/system/lvmd.service
-  register: lvmd_unit_file
+  register: topolvm_unit_file
 
 - name: ensure dir is present
   file:
     state: directory
     path: /etc/topolvm
 
-- name: Place lvmd config file
+- name: Template lvmd config file
   template:
     src: lvmd.yaml
     dest: /etc/topolvm/lvmd.yaml
     mode: 0644
-  register: lvmd_conf_file
+  register: topolvm_conf_file
+
+- name: Copy backup and restore scripts
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: 0755
+  loop:
+    - { src: "backup.sh", dest: "/usr/local/bin/topolvm-backup.sh"}
+    - { src: "restore.sh", dest: "/usr/local/bin/topolvm-restore.sh"}
 
 - name: Enable and start lvmd service
   systemd:
@@ -76,4 +95,4 @@
     enabled: yes
     state: restarted
     daemon_reload: yes
-  when: lvmd_unit_file.changed or lvmd_conf_file.changed
+  when: topolvm_unit_file.changed or topolvm_conf_file.changed

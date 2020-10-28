@@ -1,8 +1,8 @@
 ---
-lvmd_kube_kubeadm_scheduler_extra_args:
+topolvm_kube_kubeadm_scheduler_extra_args:
   config: /var/lib/scheduler/scheduler-config.yaml
 
-lvmd_scheduler_extra_volumes:
+topolvm_scheduler_extra_volumes:
  - name: "config"
    hostPath: /etc/topolvm/scheduler-config
    mountPath: /var/lib/scheduler

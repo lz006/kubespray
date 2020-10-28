@@ -32,17 +32,17 @@
       shell: kubectl label --overwrite=true ns kube-system topolvm.cybozu.com/webhook=ignore
 
     - shell: "kubectl get ns | awk 'NR>1 {print $1}'"
-      register: lvmd_ns
+      register: topolvm_ns
 
     - name: protect cert-manager namespace (if present) for being mutated through topolvm
       shell: "kubectl label --overwrite=true ns cert-manager topolvm.cybozu.com/webhook=ignore"
-      when: "'cert-manager' in lvmd_ns.stdout_lines"
+      when: "'cert-manager' in topolvm_ns.stdout_lines"
 
     - set_fact:
-        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion }}"
+        topolvm_cert_manager_apiVersion_fact: "{{ topolvm_cert_manager_apiVersion }}"
       when:
-        - lvmd_cert_manager_apiVersion is defined
-        - lvmd_cert_manager_usage == true
+        - topolvm_cert_manager_apiVersion is defined
+        - topolvm_cert_manager_usage == true
     - name: set python interpreter
       set_fact:
         ansible_python_interpreter: /usr/bin/python3
@@ -50,19 +50,19 @@
       k8s:
         state: present
         definition: "{{ lookup('template', '../templates/k8s/' + item + '.yaml') }}"
-      loop: "{{ lvmd_k8s_manifests.default }}"
+      loop: "{{ topolvm_k8s_manifests.default }}"
       loop_control:
         pause: 5
-      when: lvmd_cert_manager_usage == true
+      when: topolvm_cert_manager_usage == true
 
     - name: Create lvmd manifests (without need of cert-manager)
       k8s:
         state: present
         definition: "{{ lookup('template', '../templates/k8s/' + item + '.yaml') }}"
-      loop: "{{ lvmd_k8s_manifests.no_cert_manager }}"
+      loop: "{{ topolvm_k8s_manifests.no_cert_manager }}"
       loop_control:
         pause: 5
-      when: lvmd_cert_manager_usage == false
+      when: topolvm_cert_manager_usage == false
   always:
     - name: unset python interpreter
       set_fact:
@@ -76,11 +76,11 @@
 
 - name: get kube version
   shell: "/usr/local/bin/kubeadm version | sed 's/.*GitVersion:\"//g' | sed 's/\".*//g'"
-  register: lvmd_kube_version
+  register: topolvm_kube_version
   when: "'kube-master' in group_names"
 
 - name: reload cluster config
-  shell: "yes y | /usr/local/bin/kubeadm upgrade apply {{ lvmd_kube_version.stdout }} --config /etc/kubernetes/kubeadm-config.yaml && sleep 5"
+  shell: "yes y | /usr/local/bin/kubeadm upgrade apply {{ topolvm_kube_version.stdout }} --config /etc/kubernetes/kubeadm-config.yaml && sleep 5"
   delegate_to: "{{ item }}"
   loop: "{{ groups['kube-master'] }}"
   when: "'kube-master' in group_names"

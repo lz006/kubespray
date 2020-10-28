@@ -1,51 +1,57 @@
 ---
-# defaults file for lvmd
+# defaults file for topolvm
 
-lvmd_version: 0.5.2
+topolvm_github_repo: https://github.com/cybozu-go/topolvm
+
+topolvm_backup_restore_image_repo: core.harbor.hub.sulzer.de:8787/iac/topolvm
+
+topolvm_version: "0.6.0"
+topolvm_backup_restore_revision: "-br-rev1"
 
 ## Uninstall lvmd:
 ## Set 'true' if you want topolvm to be unistalled
 ## Note this will work only if there are no lvmd based
 ## PersistentVolumeClaims present anymore. Furthermore
 ## this won't touch VG, LV or data at OS level.
-#lvmd_uninstall: false
+#topolvm_uninstall: false
 
 ## Cert Manager:
 ## Specify if cert manager shall be used (default)
-lvmd_cert_manager_usage: true
+topolvm_cert_manager_usage: true
 ## Specify if install/unistall cert managser shall be
 ## managed via this role. (Actually this is a feature
 ## provided in official 'kubespray 2.13.0' but was broken 
 ## at the time of writing this role)
 ## Caution! Cert Manager may only deployed once per cluster!
-lvmd_cert_manager_manage: true
+topolvm_cert_manager_manage: true
 
 ## Api version of certmanager
-lvmd_cert_manager_apiVersion: cert-manager.io/v1alpha3
+topolvm_cert_manager_apiVersion: cert-manager.io/v1alpha3
 
 
 ## Prefix is needed in future releases (0.5+) to enable multiple
 ## storageclasses based on volume groups -> vg_X = storageclass_X 
-lvmd_vg_prefix: lvmd_
+topolvm_vg_prefix: topolvm_
 
 ## Volume groups with their underlying pvs to be created
 ## OPTIONAL
-lvmd_volume_groups:
+topolvm_volume_groups:
   ssd-vg:
     pvs:
       - /dev/sdb
 
 ## Volumegroup to be managed by lvmd
-## Necessary if lvmd_version<0.5.0
-#lvmd_vg: lvmd_hdd
+## Necessary if topolvm_version<0.5.0
+#topolvm_vg: topolvm_hdd
 
 
-lvmd_k8s_manifests:
+topolvm_k8s_manifests:
   default:
     - namespace
     #- kustomization
     - crd
     - crd_restore
+    - crd_backup
     - psp
     - certificates
     - scheduler-options
@@ -60,6 +66,7 @@ lvmd_k8s_manifests:
     #- kustomization
     - crd
     - crd_restore
+    - crd_backup
     - psp
     ## TODO: "Prepare the certificate without cert-manager" -> https://github.com/cybozu-go/topolvm/tree/master/deploy
     #- certificates

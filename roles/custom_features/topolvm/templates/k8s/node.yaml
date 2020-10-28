@@ -13,7 +13,7 @@ rules:
     resources: ["nodes"]
     verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["topolvm.cybozu.com"]
-    resources: ["restores", "restores/status", "logicalvolumes", "logicalvolumes/status"]
+    resources: ["backups", "backups/status", "restores", "restores/status", "logicalvolumes", "logicalvolumes/status"]
     verbs: ["get", "list", "watch", "create", "update", "delete", "patch"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["csidrivers"]
@@ -22,6 +22,15 @@ rules:
     resources: ["podsecuritypolicies"]
     verbs: ["use"]
     resourceNames: ["topolvm-node"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -56,7 +65,7 @@ spec:
       serviceAccountName: node
       containers:
         - name: topolvm-node
-          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: {{ topolvm_backup_restore_image_repo }}:{{ topolvm_version }}{{ topolvm_backup_restore_revision }}
           securityContext:
             privileged: true
           command:
@@ -92,7 +101,7 @@ spec:
               mountPropagation: "Bidirectional"
 
         - name: csi-registrar
-          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ topolvm_version }}
           command:
             - /csi-node-driver-registrar
             - "--csi-address=/run/topolvm/csi-topolvm.sock"
@@ -108,7 +117,7 @@ spec:
               mountPath: /registration
 
         - name: liveness-probe
-          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ topolvm_version }}
           command:
             - /livenessprobe
             - "--csi-address=/run/topolvm/csi-topolvm.sock"

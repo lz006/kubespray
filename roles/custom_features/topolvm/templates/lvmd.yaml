@@ -1,0 +1,11 @@
+socket-name: /run/topolvm/lvmd.sock
+device-classes:
+  - name: ssd
+    volume-group: ssd-vg
+    default: true
+    spare-gb: 10
+backup:
+  script-path: "/usr/local/bin/topolvm-backup.sh"
+  workdir: "/var/topolvm"
+restore:
+  script-path: "/usr/local/bin/topolvm-restore.sh"

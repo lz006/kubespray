@@ -9,22 +9,22 @@
 
     - name: get cert manager api version
       shell: "kubectl api-versions | grep -i certmanager.k8s.io/"
-      register: lvmd_cert_manager_apiVersion_detected
+      register: topolvm_cert_manager_apiVersion_detected
       when:
-        - not (lvmd_cert_manager_apiVersion is defined)
-        - lvmd_cert_manager_usage == true
+        - not (topolvm_cert_manager_apiVersion is defined)
+        - topolvm_cert_manager_usage == true
 
     - set_fact:
-        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion_detected.stdout }}"
+        topolvm_cert_manager_apiVersion_fact: "{{ topolvm_cert_manager_apiVersion_detected.stdout }}"
       when:
-        - not (lvmd_cert_manager_apiVersion is defined)
-        - lvmd_cert_manager_usage == true
+        - not (topolvm_cert_manager_apiVersion is defined)
+        - topolvm_cert_manager_usage == true
 
     - set_fact:
-        lvmd_cert_manager_apiVersion_fact: "{{ lvmd_cert_manager_apiVersion }}"
+        topolvm_cert_manager_apiVersion_fact: "{{ topolvm_cert_manager_apiVersion }}"
       when:
-        - lvmd_cert_manager_apiVersion is defined
-        - lvmd_cert_manager_usage == true
+        - topolvm_cert_manager_apiVersion is defined
+        - topolvm_cert_manager_usage == true
     - name: set python interpreter
       set_fact:
         ansible_python_interpreter: /usr/bin/python3
@@ -32,15 +32,15 @@
       k8s:
         state: absent
         definition: "{{ lookup('template', '../templates/k8s/' + item + '.yaml') }}"
-      loop: "{{ lvmd_k8s_manifests.default | reverse | list }}"
-      when: lvmd_cert_manager_usage == true
+      loop: "{{ topolvm_k8s_manifests.default | reverse | list }}"
+      when: topolvm_cert_manager_usage == true
 
     - name: Delete lvmd manifests (without need of cert-manager)
       k8s:
         state: absent
         definition: "{{ lookup('template', '../templates/k8s/' + item + '.yaml') }}"
-      loop: "{{ lvmd_k8s_manifests.no_cert_manager | reverse | list }}"
-      when: lvmd_cert_manager_usage == false  
+      loop: "{{ topolvm_k8s_manifests.no_cert_manager | reverse | list }}"
+      when: topolvm_cert_manager_usage == false  
   always:
     - name: reset python interpreter
       set_fact:
@@ -64,11 +64,11 @@
 
   - name: get kube version
     shell: "/usr/local/bin/kubeadm version | sed 's/.*GitVersion:\"//g' | sed 's/\".*//g'"
-    register: lvmd_kube_version
+    register: topolvm_kube_version
     when: "'kube-master' in group_names"
 
   - name: reload cluster config
-    shell: "yes y | /usr/local/bin/kubeadm upgrade apply {{ lvmd_kube_version.stdout }} --config /etc/kubernetes/kubeadm-config.yaml && sleep 5"
+    shell: "yes y | /usr/local/bin/kubeadm upgrade apply {{ topolvm_kube_version.stdout }} --config /etc/kubernetes/kubeadm-config.yaml && sleep 5"
     delegate_to: "{{ item }}"
     loop: "{{ groups['kube-master'] }}"
     when: "'kube-master' in group_names"

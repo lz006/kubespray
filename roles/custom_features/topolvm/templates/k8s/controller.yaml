@@ -307,8 +307,7 @@ spec:
       serviceAccountName: controller
       containers:
         - name: topolvm-controller
-          #image: quay.io/topolvm/topolvm:{{ lvmd_version }}
-          image: core.harbor.hub.sulzer.de:8787/iac/topolvm:0.1.4
+          image: {{ topolvm_backup_restore_image_repo }}:{{ topolvm_version }}{{ topolvm_backup_restore_revision }}
           command:
             - /topolvm-controller
             - --cert-dir=/certs
@@ -336,21 +335,19 @@ spec:
               mountPath: /certs
 
         - name: csi-provisioner
-          #image: quay.io/topolvm/topolvm:{{ lvmd_version }}
-          image: core.harbor.hub.sulzer.de:8787/iac/topolvm:0.1.4
+          image: {{ topolvm_backup_restore_image_repo }}:{{ topolvm_version }}{{ topolvm_backup_restore_revision }}
           command:
             - /csi-provisioner
             - "--csi-address=/run/topolvm/csi-topolvm.sock"
             - "--feature-gates=Topology=true,AnyVolumeDataSource=true"
             - --leader-election
             - --leader-election-namespace=topolvm-system
-            - --leader-election-type=leases
           volumeMounts:
             - name: socket-dir
               mountPath: /run/topolvm
 
         - name: csi-attacher
-          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ topolvm_version }}
           command:
             - /csi-attacher
             - "--csi-address=/run/topolvm/csi-topolvm.sock"
@@ -361,7 +358,7 @@ spec:
               mountPath: /run/topolvm
 
         - name: csi-resizer
-          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ topolvm_version }}
           command:
             - /csi-resizer
             - "--csi-address=/run/topolvm/csi-topolvm.sock"
@@ -372,7 +369,7 @@ spec:
               mountPath: /run/topolvm
 
         - name: liveness-probe
-          image: quay.io/topolvm/topolvm:{{ lvmd_version }}
+          image: quay.io/topolvm/topolvm:{{ topolvm_version }}
           command:
             - /livenessprobe
             - "--csi-address=/run/topolvm/csi-topolvm.sock"

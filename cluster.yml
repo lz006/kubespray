@@ -244,14 +244,14 @@
         state: enforcing
         policy: targeted
 
-- hosts: lvmd
+- hosts: topolvm
   become: yes
   any_errors_fatal: yes
   roles:
-    - custom_features/lvmd
+    - custom_features/topolvm
   tags:
     - post_install_tasks
-    - lvmd
+    - topolvm
 
 #######################################################
 ###### Sulzer Stop  ###################################

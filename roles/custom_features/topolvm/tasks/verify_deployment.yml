@@ -21,14 +21,14 @@
       kind: Pod
       name: topolvm-verification
       namespace: default
-    register: lvmd_verification
-    until: "lvmd_verification.resources[0].status.phase | default('') == 'Running'"
+    register: topolvm_verification
+    until: "topolvm_verification.resources[0].status.phase | default('') == 'Running'"
     retries: 10
     delay: 5
     #ignore_errors: yes
 
   - debug:
-      var: lvmd_verification
+      var: topolvm_verification
  
   - name: Delete verify manifests
     k8s:
@@ -47,7 +47,7 @@
 
   - fail:
       msg: lvmd verification failed, needs further investigation
-    when: lvmd_verification is failed
+    when: topolvm_verification is failed
 
   always:
     - name: reset python interpreter

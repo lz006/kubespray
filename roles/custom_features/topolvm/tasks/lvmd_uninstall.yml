@@ -3,13 +3,13 @@
 - name: take lvmd service down and delete binary
   block:
     - shell: /usr/bin/systemctl list-units lvmd.service
-      register: lvmd_service_stat
+      register: topolvm_service_stat
       #ignore_errors: yes
 
     - systemd:
         name: lvmd.service
         state: stopped
-      when: lvmd_service_stat is succeeded
+      when: topolvm_service_stat is succeeded
 
     - file:
         path: /usr/local/bin/lvmd
