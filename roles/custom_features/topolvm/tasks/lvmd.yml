@@ -47,7 +47,7 @@
 
 - name: download and unarchive lvmd
   unarchive:
-    src: "{{ topolvm_github_repo }}/releases/download/v{{ topolvm_version }}/lvmd-{{ topolvm_br_full_version }}.tar.gz"
+    src: "{{ topolvm_github_repo }}/releases/download/v{{ topolvm_br_full_version }}/lvmd-{{ topolvm_br_full_version }}.tar.gz"
     dest: /usr/local/bin
     remote_src: yes
   environment: "{{ environment_variables | default({}) }}"

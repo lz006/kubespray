@@ -1,7 +1,9 @@
 ---
 # defaults file for topolvm
 
-topolvm_github_repo: https://github.com/cybozu-go/topolvm
+# Original
+#topolvm_github_repo: https://github.com/cybozu-go/topolvm
+topolvm_github_repo: https://github.com/lz006/topolvm
 
 topolvm_backup_restore_image_repo: core.harbor.hub.sulzer.de:8787/iac/topolvm
 
